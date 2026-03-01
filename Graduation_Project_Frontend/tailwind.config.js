@@ -18,7 +18,9 @@ export default {
         },
         DarkGreen: "#667E68FF",
         MainTextColor:"#151915FF",
-        textColor:"#546454FF"
+        textColor:"#546454FF",
+        DarkGray: "#5C6156FF",
+        grayBorder: "#667E681A",
 
       },
     },

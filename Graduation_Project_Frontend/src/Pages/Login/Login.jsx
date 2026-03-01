@@ -90,7 +90,7 @@ export default function Login() {
               </label>
               <div className="relative mt-2">
                 <span className="absolute left-3.5 top-3.5 text-DarkGreen/60 pointer-events-none">
-                  <Mail size={20} />
+                  <Mail size={16} className="text-DarkGray" />
                 </span>
                 <input
                   type="email"
@@ -100,7 +100,7 @@ export default function Login() {
                   onChange={formik.handleChange}
                   onBlur={formik.handleBlur}
                   autoComplete="off"
-                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-primary-700 text-sm text-textColor placeholder-DarkGreen/60 focus:outline-none focus:ring-2 focus:ring-DarkGreen/30 focus:border-DarkGreen transition"
+                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-primary-700 text-[11px]  placeholder-DarkGreen/60 focus:outline-none focus:ring-2 focus:ring-DarkGreen/30 focus:border-DarkGreen transition"
                 />
               </div>
               {formik.errors.email && formik.touched.email && (
@@ -121,7 +121,7 @@ export default function Login() {
               </div>
               <div className="relative">
                 <span className="absolute left-3.5 top-3.5 text-DarkGreen/60 pointer-events-none">
-                  <Lock size={20} />
+                  <Lock size={16} className="text-DarkGray"/>
                 </span>
                 <input
                   type={showPassword ? "text" : "password"}
@@ -130,14 +130,14 @@ export default function Login() {
                   value={formik.values.password}
                   onChange={formik.handleChange}
                   onBlur={formik.handleBlur}
-                  className="w-full pl-10 pr-11 py-3 rounded-xl border border-primary-700 text-sm text-textColor placeholder-DarkGreen/60 focus:outline-none focus:ring-2 focus:ring-DarkGreen/30 focus:border-DarkGreen transition"
+                  className="w-full pl-10 pr-11 py-3 rounded-xl border border-primary-700 text-[11px] text-textColor placeholder-DarkGreen/60 focus:outline-none focus:ring-2 focus:ring-DarkGreen/30 focus:border-DarkGreen transition"
                 />
                 <button
                   type="button"
                   onClick={(e) => { e.preventDefault(); setShowPassword(!showPassword); }}
                   className="absolute right-3.5 top-3.5 text-DarkGreen/60 hover:text-DarkGreen transition"
                 >
-                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  {showPassword ? <EyeOff size={16} className="text-DarkGray" /> : <Eye size={16} className="text-DarkGray" />}
                 </button>
               </div>
               {formik.errors.password && formik.touched.password && (
