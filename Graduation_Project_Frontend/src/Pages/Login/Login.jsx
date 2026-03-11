@@ -30,7 +30,7 @@ export default function Login() {
   return (
     <div className="min-h-screen flex">
 
-      <div className="hidden md:flex flex-1 flex-col bg-BgColor justify-between p-9 ps-12">
+      <div className="hidden md:flex flex-1 flex-col bg-primary-100/40 justify-between p-9 ps-12">
       
         <div>
           <div className="flex items-center gap-2 mb-1">
