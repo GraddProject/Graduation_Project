@@ -10,8 +10,7 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [remember, setRemember] = useState(false);
 
-  const passRegex =
-    /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$ %^&*-]).{8,}$/;
+  const passRegex = /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$ %^&*-]).{8,}$/;
 
   const validationSchema = object({
     email: string()
@@ -40,9 +39,7 @@ export default function Login() {
   return (
 
     <div className="min-h-screen flex">
-
-      <div className="hidden md:flex flex-1 flex-col bg-BgColor justify-between p-9 ps-12">
-
+      <div className="hidden md:flex flex-1 flex-col bg-primary-100/40 justify-between p-9 ps-12">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <div className="w-9 h-9 bg-DarkGreen rounded-lg text-white flex items-center justify-center">
@@ -104,7 +101,6 @@ export default function Login() {
 
           </div>
 
-
           <h1 className="text-2xl md:text-3xl font-bold text-center text-MainTextColor">
             Welcome Back
           </h1>
@@ -112,7 +108,6 @@ export default function Login() {
           <p className="text-sm font-light mb-8 mt-3 text-center text-textColor">
             Please sign in to your clinical account
           </p>
-
 
           <form
             className="space-y-4"
@@ -183,18 +178,14 @@ export default function Login() {
 
           </form>
 
-
           <p className="text-center text-xs text-textColor mt-6">
-
             Don't have an account?{" "}
-
             <a
               href="#"
               className="text-DarkGreen font-semibold hover:underline"
             >
               Contact your administrator
             </a>
-
           </p>
 
         </div>
