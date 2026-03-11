@@ -9,6 +9,7 @@ export default function CreateUserAccount() {
     <div className="bg-gradient-to-br from-primary-50 to-primary-100 min-h-screen min-w-screen">
       <AdminInterfaceNavbar/>
       <RegisterForm/>
+      
     </div>
   );
 }

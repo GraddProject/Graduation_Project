@@ -187,7 +187,7 @@ import PassRequirement from "../../Components/PassRequirment/PassRequirment";
         <button
             type="submit"
             disabled={!formik.isValid}
-            className="w-full py-2 mt-2 rounded-xl font-semibold  items-center  text-[11px]  text-DarkGray"
+            className="w-full py-2 mt-2 rounded-xl font-semibold  items-center  text-[11px] bg-white  text-DarkGray border border-DarkGreen"
           >
             Cancle Registration
           </button>
