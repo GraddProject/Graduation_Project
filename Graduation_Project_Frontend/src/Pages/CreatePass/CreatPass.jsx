@@ -5,11 +5,11 @@ import { useNavigate } from "react-router-dom";
 import { object, string, ref, boolean } from "yup";
 import PassRequirement from "../../Components/PassRequirment/PassRequirment";
 
-export default function CreatPass() {
-  const [email] = useState("mahaebrahiim4@example.com");
-  const [role] = useState("Patient");
-  const [showPassword, setShowPassword] = useState(false);
-  const navigate = useNavigate();
+  export default function CreatPass() {
+    const [email] = useState("mahaebrahiim4@example.com");
+    const [role] = useState("Patient");
+    const [showPassword, setShowPassword] = useState(false);
+    const navigate = useNavigate();
   
 
   const passRegex = /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$/;
@@ -53,7 +53,7 @@ export default function CreatPass() {
   const passwordsMatch = password && rePassword && password === rePassword;
 
   return (
-    <div className="min-h-screen w-full flex flex-col py-10 items-center bg-gradient-to-br from-primary-50 to-primary-300 px-4 sm:px-6 lg:px-20">
+    <div className="min-h-screen w-full flex flex-col py-10 items-center bg-gradient-to-br from-primary-50 to-primary-100 px-4 sm:px-6 lg:px-20">
       
       {/* Header */}
       <div className="flex items-center space-x-2 ">

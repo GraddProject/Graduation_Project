@@ -2,7 +2,7 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import Login from "./Pages/Login/Login";
 import Layout from "./Components/Layout/Layout";
 import CreatPass from "./Pages/CreatePass/CreatPass";
-
+import CreateUserAccount from "./Pages/CreateUserAccount/CreateUserAccount";
 function App() {
 let router = createBrowserRouter([
     {
@@ -13,6 +13,7 @@ let router = createBrowserRouter([
     },
     { path: "/login", element: <Login /> },
     { path: "/createpass", element: <CreatPass/> },
+    { path: "/createaccount", element: <CreateUserAccount/> },
   ]);
 
   return (
