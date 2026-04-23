@@ -17,16 +17,16 @@ function App() {
       element: <Layout />,
       children: [
         { index: true, element: <Home /> },
-        { path: "/admin", element: <CreateUserAccount /> },
         { path: "/doctor/dashboard", element: <DoctorDashboard /> },
         { path: "/patient", element: <PatientDashboard /> },
         { path: "/doctor/appointments", element: <DoctorViewAppointments /> },
-        { path: "/admindashboard", element: <AdminDashboard /> },
+       
       ],
     },
     { path: "/login", element: <Login /> },
     { path: "/createpass", element: <CreatPass /> },
-    { path: "/createaccount", element: <CreateUserAccount /> },
+    { path: "/createaccount", element: <CreateUserAccount /> }, 
+    { path: "/admindashboard", element: <AdminDashboard /> },
   ]);
 
   return (
