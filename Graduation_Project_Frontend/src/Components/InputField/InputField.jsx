@@ -1,17 +1,33 @@
-
 export default function InputField({
   icon: Icon,
   type = "text",
   name,
   placeholder,
   formik,
-  colSpan = "col-span-1"
+  colSpan = "col-span-1",
+  label,
+  endIcon,
+  forgotPassword = false,  
 }) {
   return (
     <div className={colSpan}>
+
+      {/* Label row */}
+      <div className="flex justify-between items-center mb-2">
+        {label && (
+          <label className="text-sm font-semibold text-MainTextColor">
+            {label}
+          </label>
+        )}
+        {forgotPassword && (
+          <a href="#" className="text-xs text-DarkGreen hover:underline font-medium">
+            Forgot Password?
+          </a>
+        )}
+      </div>
+
       <div className="flex items-center border border-primary-900 rounded-xl px-3 py-3 focus-within:border-DarkGreen transition">
         <Icon size={16} className="text-DarkGray" />
-
         <input
           type={type}
           name={name}
@@ -21,6 +37,7 @@ export default function InputField({
           onChange={formik.handleChange}
           onBlur={formik.handleBlur}
         />
+        {endIcon && <span>{endIcon}</span>}
       </div>
 
       {formik.touched[name] && formik.errors[name] && (

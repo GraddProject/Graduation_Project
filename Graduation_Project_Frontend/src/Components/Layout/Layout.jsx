@@ -1,12 +1,13 @@
-import { Outlet } from 'react-router-dom'
-import Navbar from '../Navbar/Navbar'
-
+import { Outlet } from "react-router-dom";
+import Navbar from "../Navbar/Navbar";
 
 export default function Layout() {
   return (
     <>
-      <Navbar/>
-      <Outlet/>
+      <div className="flex min-h-screen">
+        <Navbar />
+        <Outlet />
+      </div>
     </>
-  )
+  );
 }

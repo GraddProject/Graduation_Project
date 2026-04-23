@@ -1,46 +1,74 @@
 import { useFormik } from "formik";
-import { Leaf, ShieldCheck, Mail, Lock, Eye, EyeOff, CircleAlert, CircleCheck, ArrowRight } from "lucide-react";
-import { useState  } from "react";
-import { useNavigate } from "react-router-dom";
+import {
+  Leaf, ShieldCheck, Mail, Lock, Eye, EyeOff,
+  CircleAlert, CircleCheck, ArrowRight,
+} from "lucide-react";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { object, string, ref, boolean } from "yup";
+import axios from "axios";
 import PassRequirement from "../../Components/PassRequirment/PassRequirment";
 
-  export default function CreatPass() {
-    const [email] = useState("mahaebrahiim4@example.com");
-    const [role] = useState("Patient");
-    const [showPassword, setShowPassword] = useState(false);
-    const navigate = useNavigate();
-  
+export default function CreatPass() {
+  const [searchParams] = useSearchParams();
+  const [email, setEmail] = useState("");
+  const [role, setRole] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [userId, setUserId] = useState("");
+  const [token, setToken] = useState("");
+  const [apiError, setApiError] = useState("");
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const id = searchParams.get("userId");
+    const tk = searchParams.get("token");
+    const em = searchParams.get("Email");
+    const rl = searchParams.get("Role");
+
+    if (id && tk) {
+      setUserId(id);
+      setToken(tk.replace(/ /g, "+"));
+      setEmail(em);
+      setRole(rl);
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
 
   const passRegex = /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$/;
 
   const validationSchema = object({
     password: string()
       .required("Password is required")
-      .matches(
-      passRegex,
-      "Password is invalid, please check the Security PassRequirements"
-    ),
+      .matches(passRegex, "Password is invalid, please check the Security PassRequirements"),
     rePassword: string()
       .required("Confirm your password")
       .oneOf([ref("password")], "Passwords must match"),
-      agree: boolean()
-      .oneOf([true], "You must accept the terms and conditions"),
-    });
+    agree: boolean().oneOf([true], "You must accept the terms and conditions"),
+  });
 
+  async function handleSetPassword(values) {
+    setApiError("");
+    const options = {
+      url: `https://her-journey-161730893876.us-central1.run.app/api/Account/ConfirmEmail`,
+      method: "POST",
+      data: {
+        userId,
+        token,
+        newPassword: values.password,
+      },
+    };
+    try {
+      await axios.request(options);
+      navigate("/login");
+    } catch (error) {
+      setApiError(error.response?.data?.[0]?.description || "Something went wrong, please try again.");
+    }
+  }
 
   const formik = useFormik({
-    initialValues: {
-      password: "",
-      rePassword: "",
-      agree: false,
-    },
+    initialValues: { password: "", rePassword: "", agree: false },
     validationSchema,
-    
-    onSubmit: (values) => {
-      console.log("Form submitted:", values);
-      navigate("/login");
-    },
+    onSubmit: (values) => handleSetPassword(values),
   });
 
   const password = formik.values.password;
@@ -54,9 +82,9 @@ import PassRequirement from "../../Components/PassRequirment/PassRequirment";
 
   return (
     <div className="min-h-screen w-full flex flex-col py-10 items-center bg-gradient-to-br from-primary-50 to-primary-100 px-4 sm:px-6 lg:px-20">
-      
+
       {/* Header */}
-      <div className="flex items-center space-x-2 ">
+      <div className="flex items-center space-x-2">
         <div className="w-8 h-8 bg-DarkGreen rounded-full flex items-center justify-center">
           <Leaf size={20} className="text-white" />
         </div>
@@ -67,7 +95,7 @@ import PassRequirement from "../../Components/PassRequirment/PassRequirment";
 
       {/* White Container */}
       <div className="w-full max-w-md bg-white rounded-2xl shadow-[0_6px_24px_rgba(102,126,104,0.12)] p-8 py-4 flex flex-col items-center mt-4">
-        
+
         {/* Shield Icon */}
         <div className="w-12 h-12 bg-grayBorder rounded-full flex items-center justify-center mb-3">
           <ShieldCheck size={28} className="text-DarkGreen" />
@@ -111,11 +139,10 @@ import PassRequirement from "../../Components/PassRequirment/PassRequirment";
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
             />
-            <button 
-              type="button" 
-              onClick={() => setShowPassword(!showPassword)}>
-              {showPassword ? <EyeOff size={16} className="text-DarkGray" /> : <Eye size={16} 
-              className="text-DarkGray" />}
+            <button type="button" onClick={() => setShowPassword(!showPassword)}>
+              {showPassword
+                ? <EyeOff size={16} className="text-DarkGray" />
+                : <Eye size={16} className="text-DarkGray" />}
             </button>
           </div>
           {formik.touched.password && formik.errors.password && (
@@ -158,41 +185,51 @@ import PassRequirement from "../../Components/PassRequirment/PassRequirment";
           </div>
 
           {/* Checkbox */}
-          <div className="flex ite gap-2 mt-2">
+          <div className="flex gap-2 mt-2">
             <input
               type="checkbox"
               name="agree"
               checked={formik.values.agree}
               onChange={formik.handleChange}
-              className="w-4 h-4 mt-1 accent-Darbg-DarkGreen cursor-pointer"
+              className="w-4 h-4 mt-1 accent-DarkGreen cursor-pointer"
             />
-            <label className="text-[12px] text-DarkGray ">I agree to the <span className="font-bold">Terms of Service</span> and <span className="font-bold">Privacy Policy</span> regarding my medical data.</label>
+            <label className="text-[12px] text-DarkGray">
+              I agree to the <span className="font-bold">Terms of Service</span> and{" "}
+              <span className="font-bold">Privacy Policy</span> regarding my medical data.
+            </label>
           </div>
           {formik.touched.agree && formik.errors.agree && (
             <p className="text-red-700/60 text-xs">*{formik.errors.agree}</p>
+          )}
+
+          {/* API Error */}
+          {apiError && (
+            <p className="text-red-700/60 text-xs">*{apiError}</p>
           )}
 
           {/* Submit */}
           <button
             type="submit"
             disabled={!formik.isValid}
-            className={`w-full  text-sm font-medium py-3 rounded-xl flex items-center justify-center gap-2 transition-colors shadow-sm ${
-              formik.isValid ? "bg-DarkGreen hover:bg-DarkGreen/90 text-white" : "bg-[#F7F8F7FF] text-DarkGray cursor-not-allowed"
+            className={`w-full text-sm font-medium py-3 rounded-xl flex items-center justify-center gap-2 transition-colors shadow-sm ${
+              formik.isValid
+                ? "bg-DarkGreen hover:bg-DarkGreen/90 text-white"
+                : "bg-[#F7F8F7FF] text-DarkGray cursor-not-allowed"
             }`}
           >
-            Activate Account <ArrowRight size={16} className="mt-1" /> 
+            Activate Account <ArrowRight size={16} className="mt-1" />
           </button>
         </form>
-          {/* Cancle Registration  */}
-        <button
-            type="submit"
-            disabled={!formik.isValid}
-            className="w-full py-2 mt-2 rounded-xl font-semibold  items-center  text-[11px] bg-white  text-DarkGray border border-DarkGreen"
-          >
-            Cancle Registration
-          </button>
 
-        
+        {/* Cancel */}
+        <button
+          type="button"
+          className="w-full py-2 mt-2 rounded-xl font-semibold text-[11px] bg-white text-DarkGreen border border-DarkGreen"
+          onClick={() => navigate("/login")}
+        >
+          Cancel Registration
+        </button>
+
       </div>
     </div>
   );
