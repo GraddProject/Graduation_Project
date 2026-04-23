@@ -8,6 +8,8 @@ import Home from "./Pages/Home/Home";
 import DoctorDashboard from "./Pages/DoctorDashboard/DoctorDashboard";
 import PatientDashboard from "./Pages/PatientDashboard/PatientDashboard";
 import DoctorViewAppointments from "./Pages/DoctorViewAppointments/DoctorViewAppointments";
+import AdminDashboard from "./Pages/AdminDashboard/AdminDashboard";
+
 function App() {
   let router = createBrowserRouter([
     {
@@ -16,22 +18,21 @@ function App() {
       children: [
         { index: true, element: <Home /> },
         { path: "/admin", element: <CreateUserAccount /> },
-        { path: "/doctor/dashboard", element: <DoctorDashboard/> },
+        { path: "/doctor/dashboard", element: <DoctorDashboard /> },
         { path: "/patient", element: <PatientDashboard /> },
         { path: "/doctor/appointments", element: <DoctorViewAppointments /> },
-          
+        { path: "/admindashboard", element: <AdminDashboard /> },
       ],
     },
     { path: "/login", element: <Login /> },
     { path: "/createpass", element: <CreatPass /> },
+    { path: "/createaccount", element: <CreateUserAccount /> },
   ]);
 
   return (
-    <>
-      <UserProvider>
-        <RouterProvider router={router} />
-      </UserProvider>
-    </>
+    <UserProvider>
+      <RouterProvider router={router} />
+    </UserProvider>
   );
 }
 

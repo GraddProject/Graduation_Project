@@ -52,7 +52,7 @@ function DoctorSearchSelect({ doctors, value, onChange, onBlur, error, touched }
         ${isOpen ? "border-DarkGreen" : "border-primary-900"}
         ${touched && error ? "border-red-400" : ""}`}
       >
-        <Stethoscope size={16} className="text-DarkGray shrink-0" />
+        <Stethoscope size={17} className="text-DarkGray shrink-0" />
         <input
           type="text"
           value={search}
@@ -60,7 +60,7 @@ function DoctorSearchSelect({ doctors, value, onChange, onBlur, error, touched }
           onFocus={() => setIsOpen(true)}
           onBlur={onBlur}
           placeholder="Search doctor by name..."
-          className="flex-1 mx-3 outline-none text-[11px] text-textColor placeholder-DarkGray/40 bg-transparent"
+          className="flex-1 mx-3 outline-none text-[14px] text-textColor placeholder-DarkGray/40 bg-transparent"
         />
         {selected && <Check size={14} className="text-DarkGreen shrink-0" />}
       </div>
@@ -70,14 +70,14 @@ function DoctorSearchSelect({ doctors, value, onChange, onBlur, error, touched }
           <div className="absolute top-1 left-0 right-0 bg-white border border-primary-900 rounded-xl shadow-[0_8px_24px_rgba(102,126,104,0.15)] overflow-hidden">
             <div className="max-h-[180px] overflow-y-auto">
               {filtered.length === 0 ? (
-                <div className="px-4 py-3 text-[11px] text-DarkGray/50 text-center">No doctors found</div>
+                <div className="px-4 py-3 text-[14px] text-DarkGray/50 text-center">No doctors found</div>
               ) : (
                 filtered.map((doc) => (
                   <div
                     key={doc.id}
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={() => handleSelect(doc)}
-                    className={`flex items-center justify-between px-4 py-2.5 cursor-pointer transition-colors text-[11px]
+                    className={`flex items-center justify-between px-4 py-2.5 cursor-pointer transition-colors text-[14px]
                       ${String(value) === String(doc.id)
                         ? "bg-DarkGreen/5 text-DarkGreen font-semibold"
                         : "text-textColor hover:bg-gray-50"}`}
