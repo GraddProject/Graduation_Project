@@ -1,5 +1,5 @@
 import img from "../../assets/download.png";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import axios from "axios";
 import AdminDashboardFilter from "../../Components/AdminDashboardFilter/AdminDashboardFilter";
 import AdminInterfaceNavbar from "../../Components/AdminInterfaceNavbar/AdminInterfaceNavbar";
@@ -8,8 +8,11 @@ import DashboardTableHeader from "../../Components/DashboardTableHeader/Dashboar
 import Pagination from "../../Components/Pagination/Pagination";
 import UpdateUserData from "../../Components/UpdateUserData/UpdateUserData";
 import DeleteUser from "../../Components/DeleteUser/DeleteUser";
+import { UserContext } from "../../Components/context/User.context";
 
 export default function Dashboard() {
+  const { token } = useContext(UserContext); 
+
   const [search, setSearch] = useState("");
   const [role, setRole] = useState("all");
   const [fromDate, setFromDate] = useState("");
@@ -24,15 +27,8 @@ export default function Dashboard() {
   const [selectedUser, setSelectedUser] = useState(null);
   const [showDelete, setShowDelete] = useState(false);
 
-  const openUpdate = (user) => {
-    setSelectedUser(user);
-    setShowUpdate(true);
-  };
-
-  const openDelete = (user) => {
-    setSelectedUser(user);
-    setShowDelete(true);
-  };
+  const openUpdate = (user) => { setSelectedUser(user); setShowUpdate(true); };
+  const openDelete = (user) => { setSelectedUser(user); setShowDelete(true); };
 
   const getUsers = async () => {
     try {
@@ -47,13 +43,20 @@ export default function Dashboard() {
       });
 
       const options = {
-        url: `https://her-journey-161730893876.us-central1.run.app/api/Admin/DashBoard?${query.toString()}`,
+        url: `https://her-journey-669913381811.us-central1.run.app/api/Admin/DashBoard?${query.toString()}`,
         method: "GET",
+         headers: {
+          Authorization: `Bearer ${token}`, 
+        },
       };
 
       const { data } = await axios.request(options);
 
-      const formattedUsers = data.map((u) => ({
+      console.log("API response:", data); 
+
+      const list = Array.isArray(data) ? data : data.data ?? data.users ?? data.items ?? [];
+
+      const formattedUsers = list.map((u) => ({
         id: u.id,
         name: u.displayName,
         email: u.email,
@@ -61,10 +64,11 @@ export default function Dashboard() {
         phone: u.phoneNumber || "",
         avatar: img,
         registered: u.createdAt?.slice(0, 10) || "",
+        actived: u.actived,
       }));
 
       setUsers(formattedUsers);
-      setTotalItems(data.length);
+      setTotalItems(data.totalCount ?? data.total ?? list.length);
     } catch (error) {
       console.error("Failed to fetch users:", error);
     }
@@ -85,11 +89,10 @@ export default function Dashboard() {
 
   const totalPages = Math.ceil(totalItems / pageSize);
 
-  
   return (
     <>
       <AdminInterfaceNavbar />
-      <div className="px-6 lg:px-16 py-8  bg-gradient-to-br from-primary-50 to-primary-100 min-h-screen min-w-screen">
+      <div className="px-6 lg:px-16 py-8 bg-gradient-to-br from-primary-50 to-primary-100 min-h-screen min-w-screen">
         <AdminDashboardFilter
           search={search} setSearch={setSearch}
           role={role} setRole={setRole}
@@ -126,26 +129,21 @@ export default function Dashboard() {
           />
         </div>
 
-
         {showUpdate && selectedUser && (
-          <UpdateUserData user={selectedUser} 
+          <UpdateUserData user={selectedUser}
             onClose={(updated) => {
-            setShowUpdate(false);
-
-          if (updated) {
-            getUsers(); 
-          } }}
+              setShowUpdate(false);
+              if (updated) getUsers();
+            }}
           />
         )}
         {showDelete && selectedUser && (
-          <DeleteUser 
-            user={selectedUser}
+          <DeleteUser user={selectedUser}
             onClose={(deleted) => {
               setShowDelete(false);
-              
-            if (deleted) {
-              getUsers(); 
-            }}}/>
+              if (deleted) getUsers();
+            }}
+          />
         )}
       </div>
     </>

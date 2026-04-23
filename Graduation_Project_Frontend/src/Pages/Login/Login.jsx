@@ -30,7 +30,7 @@ export default function Login() {
 
   async function getCurrentUser(token) {
     const options = {
-      url: "https://her-journey-161730893876.us-central1.run.app/api/Account/currentUser",
+      url: "https://her-journey-669913381811.us-central1.run.app/api/Account/currentUser",
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
     };
@@ -41,7 +41,7 @@ export default function Login() {
   async function sendDataTologin(values) {
     try {
       const options = {
-        url: "https://her-journey-161730893876.us-central1.run.app/api/Account/Login",
+        url: "https://her-journey-669913381811.us-central1.run.app/api/Account/Login",
         method: "POST",
         data: values,
       };
@@ -54,7 +54,7 @@ export default function Login() {
         // Step 3: Navigate based on role
         const role = userData.role[0];
         if (role === "Admin") {
-          navigate("/admin");
+          navigate("/admindashboard");
         } else if (role === "Doctor") {
           navigate("/doctor");
         } else if (role === "Patient") {
