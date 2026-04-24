@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Baby, ChevronLeft, Menu, X } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 
-export default function AdminInterfaceNavbar() {
+export default function AdminInterfaceNavbar({totalUsers }) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const location = useLocation();
 
@@ -54,7 +54,7 @@ export default function AdminInterfaceNavbar() {
 
         <div className="flex items-center gap-3">
                     <div className="bg-[#F5FAF5FF] border border-grayBorder py-2 px-3 rounded-3xl">
-            <p className="text-[#565D6DFF] font-bold text-sm">24 user</p>
+            <p className="text-[#565D6DFF] font-bold text-sm">{totalUsers} users</p>
           </div>
           <button
             className="md:hidden"

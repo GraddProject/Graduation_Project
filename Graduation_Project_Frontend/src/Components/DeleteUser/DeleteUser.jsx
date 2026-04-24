@@ -1,21 +1,29 @@
 import { TriangleAlert, CircleAlert } from "lucide-react";
 import axios from "axios";
+import { useContext } from "react";
+import { UserContext } from "../../Components/context/User.context";
 
 export default function DeleteUser({ user, onClose }) {
+  const { token } = useContext(UserContext);
 
   async function handleDelete() {
     try {
-      const roleApi =
-        user.role.toLowerCase() === "doctor" ? "Doctor" : "Patient";
+     const roleApi =
+     user.role.toLowerCase().includes("doctor") ? "Doctor" : "Patient";
 
       const id = user.id;
 
       const options = {
-        url: `https://her-journey-161730893876.us-central1.run.app/api/Admin/Delete${roleApi}/${id}`,
+        url: `https://her-journey-669913381811.us-central1.run.app/api/Admin/Delete${roleApi}/${id}`,
         method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
       };
 
       await axios.request(options);
+      console.log({
+      role: user.role,
+      id: user.id,
+});
 
       onClose(true); 
     } catch (error) {

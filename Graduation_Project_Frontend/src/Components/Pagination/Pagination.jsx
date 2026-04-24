@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { ChevronLeft } from "lucide-react";
 
 export default function Pagination({
   currentPage,
@@ -9,12 +10,20 @@ export default function Pagination({
 }) {
   const [startPage, setStartPage] = useState(1);
   const visiblePages = 3;
+
+  const isNoData = totalItems === 0 || totalPages === 0;
+
   const endPage = Math.min(startPage + visiblePages - 1, totalPages);
 
   useEffect(() => {
-    if (currentPage < startPage) setStartPage(Math.max(currentPage, 1));
-    else if (currentPage > endPage) setStartPage(Math.max(currentPage - visiblePages + 1, 1));
+    if (currentPage < startPage) {
+      setStartPage(Math.max(currentPage, 1));
+    } else if (currentPage > endPage) {
+      setStartPage(Math.max(currentPage - visiblePages + 1, 1));
+    }
   }, [currentPage, startPage, endPage]);
+
+  if (isNoData) return null;
 
   const startItem = (currentPage - 1) * itemsPerPage + 1;
   const endItem = Math.min(currentPage * itemsPerPage, totalItems);
@@ -24,28 +33,40 @@ export default function Pagination({
 
       {/* TEXT */}
       <p className="text-[13px] sm:text-sm text-center sm:text-left text-[#7A8F7CFF]">
-        Showing <span className="font-bold text-[#2e392f]">{startItem}-{endItem}</span> of{" "}
-        <span className="font-bold text-[#2e392f]">{totalItems}</span> users
+        Showing{" "}
+        <span className="font-bold text-[#2e392f]">
+          {startItem}-{endItem}
+        </span>{" "}
+        of{" "}
+        <span className="font-bold text-[#2e392f]">
+          {totalItems}
+        </span>{" "}
+        users
       </p>
 
       {/* BUTTONS */}
       <div className="flex items-center justify-center gap-2 flex-wrap">
-        
+
         {/* Previous */}
         <button
           onClick={() => onPageChange(Math.max(currentPage - 1, 1))}
           disabled={currentPage === 1}
-          className={`px-3 py-1 text-[13px] sm:text-sm rounded-md ${
+          className={`px-2 py-1 text-[13px] sm:text-sm rounded-md text-[#171A1FFF] bg-[#FAFAF9FF] border border-[#E8EBE8FF] ${
             currentPage === 1
-              ? "text-gray-300 bg-[#FAFAF9FF] cursor-not-allowed"
-              : "text-[#7A8F7CFF] bg-[#FAFAF9FF]"
+              ? "opacity-[0.5] cursor-not-allowed"
+              : "opacity-[1]"
           }`}
         >
-          Previous
+          <ChevronLeft size={20} />
         </button>
 
         {/* Pages */}
-        {Array.from({ length: Math.min(endPage - startPage + 1, totalPages - startPage + 1) }).map((_, i) => {
+        {Array.from({
+          length: Math.min(
+            endPage - startPage + 1,
+            totalPages - startPage + 1
+          )
+        }).map((_, i) => {
           const page = startPage + i;
           return (
             <button
@@ -64,15 +85,17 @@ export default function Pagination({
 
         {/* Next */}
         <button
-          onClick={() => onPageChange(Math.min(currentPage + 1, totalPages))}
+          onClick={() =>
+            onPageChange(Math.min(currentPage + 1, totalPages))
+          }
           disabled={currentPage === totalPages}
-          className={`px-3 py-1 text-[13px] sm:text-sm rounded-md ${
+          className={`px-2 py-1 text-[13px] sm:text-sm rounded-md text-[#171A1FFF] bg-[#FAFAF9FF] border border-[#E8EBE8FF] ${
             currentPage === totalPages
-              ? "text-gray-300 bg-[#FAFAF9FF] cursor-not-allowed"
-              : "text-[#7A8F7CFF] bg-[#FAFAF9FF]"
+              ? "opacity-[0.5] cursor-not-allowed"
+              : "opacity-[1]"
           }`}
         >
-          Next
+          <ChevronLeft size={20} className="rotate-180" />
         </button>
 
       </div>

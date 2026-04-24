@@ -1,8 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState , useContext } from "react";
 import { X, Pencil, Mail, Phone, Calendar, Search } from "lucide-react";
 import axios from "axios";
+import { UserContext } from "../../Components/context/User.context";
 
 export default function UpdateUserData({ user, onClose }) {
+  const { token } = useContext(UserContext);
   const role = user?.role || "Patient";
 
   const [formData, setFormData] = useState({
@@ -26,27 +28,52 @@ export default function UpdateUserData({ user, onClose }) {
     };
   }, []);
 
-  async function handleUpdate() {
-    try {
-      const roleApi =
-        user.role.toLowerCase() === "doctor" ? "Doctor" : "Patient";
+async function handleUpdate() {
+  try {
+    const roleApi =
+      user.role.toLowerCase().includes("doctor") ? "Doctor" : "Patient";
 
-      const id = user.id;
+    const id = user.id;
 
-      const options = {
-        url: `https://her-journey-161730893876.us-central1.run.app/api/Admin/Update${roleApi}/${id}`,
-        method: "PUT",
-        data: formData,
+const cleanPhone = formData.phone.replace(/\D/g, ""); 
+
+const payload =
+  roleApi === "Doctor"
+    ? {
+        displayName: formData.name,
+        phoneNumber: cleanPhone,
+        yearsOfExperience: 1,
+      }
+    : {
+        displayName: formData.name,
+        phoneNumber: cleanPhone,
+        bloodType: formData.blood,
+        height: 160,
+        weight: 60,
+        numberOfPregnancies: Number(formData.week) || 1,
+        dateOfBirth: formData.dob,
+        pregnancyStartDate: formData.dob,
+        doctorID: 1,
       };
 
-      await axios.request(options);
+    const options = {
+      url: `https://her-journey-669913381811.us-central1.run.app/api/Admin/Update${roleApi}/${id}`,
+      method: "PUT",
+      data: payload,
+      headers: { Authorization: `Bearer ${token}` },
+    };
 
-      onClose(true);
-    } catch (error) {
-      console.error(error);
-      onClose(false);
-    }
+    console.log("payload:", payload);
+
+    await axios.request(options);
+
+    onClose(true);
+  } catch (error) {
+    console.error("Update error:", error.response?.data || error);
+    onClose(false);
+    console.log(error.response)
   }
+}
   return (
     <div className='fixed inset-0 bg-black/40 backdrop-blur-sm flex justify-center items-center z-50 p-4'>
       <div className='bg-white rounded-2xl shadow-[0px_2px_4px_#00000012] w-full max-w-xl px-6 py-6'>
@@ -85,7 +112,7 @@ export default function UpdateUserData({ user, onClose }) {
               <label className="text-[#7A8F7CFF] text-xs font-semibold uppercase">Phone Number</label>
               <div className="relative mt-2">
                 <Phone size={16} className="absolute left-3 top-3 text-gray-400"/>
-                <input type="text" name="phone" value={formData.phone} onChange={handleChange}
+                <input type="tel" name="phone" value={formData.phone} onChange={handleChange}
                   className="w-full border rounded-lg pl-9 pr-3 py-2 outline-none"/>
               </div>
             </div>
