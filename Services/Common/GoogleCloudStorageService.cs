@@ -62,15 +62,19 @@ namespace Services.Common
             _bucketName = configuration["GoogleCloud:BucketName"]
                 ?? throw new InvalidOperationException("GoogleCloud:BucketName is not configured.");
 
-            var credentialsPath = configuration["GoogleCloud:CredentialsPath"]
-                ?? throw new InvalidOperationException("GoogleCloud:CredentialsPath is not configured.");
+            var credentialsPath = configuration["GoogleCloud:CredentialsPath"];
 
-            var credential = CredentialFactory
-                .FromFile<ServiceAccountCredential>(credentialsPath)
-                .ToGoogleCredential();
-
-            _storageClient = StorageClient.Create(credential);
+            if (!string.IsNullOrWhiteSpace(credentialsPath) && File.Exists(credentialsPath))
+            {
+                var credential = Google.Apis.Auth.OAuth2.GoogleCredential.FromFile(credentialsPath);
+                _storageClient = StorageClient.Create(credential);
+            }
+            else
+            {
+                _storageClient = StorageClient.Create();
+            }
         }
+
 
         public async Task<string> UploadFileAsync(IFormFile file, string objectName)
         {
