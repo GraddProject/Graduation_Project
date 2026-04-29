@@ -2,6 +2,7 @@
 using DomainLayer.Contracts;
 using DomainLayer.Exceptions;
 using DomainLayer.Models;
+using Services.Specifications.AppointmentSpecifications;
 using Services.Specifications.DoctorSpecifications;
 using Services.Specifications.MedicalHistorySpecification;
 using Services.Specifications.MedicalTestSpecifications;
@@ -9,15 +10,19 @@ using Services.Specifications.PatientSpecifications;
 using Services.Specifications.PreScriptionSpecifications;
 using ServicesAbstraction.Common;
 using ServicesAbstraction.DoctorAbstraction;
+using ServicesAbstraction.NotificationAbstraction;
 using Shared.DTos.AppointmentDTos;
 using Shared.DTos.DoctorDTos;
 using Shared.DTos.MedicalHistoryDTos;
 using Shared.DTos.MedicalTestDTos;
+using Shared.DTos.NotificationDTos;
 using Shared.ErrorModels;
+using AppointmentType = DomainLayer.Models.AppointmentType;
 
 namespace Services.DoctorServices
 {
-    public class DoctorService(IUnitOfWork _unitOfWork, IMapper _mapper, IFileStorageService _fileStorageService) : IDoctorService
+    public class DoctorService(IUnitOfWork _unitOfWork, IMapper _mapper, IFileStorageService _fileStorageService,
+                                INotificationService _notificationService) : IDoctorService
     {
         public async Task<bool> AddAvailabilitySlotAsync(string Email, AddAvailabilitySlotDto addAvailabilitySlot)
         {
@@ -97,6 +102,236 @@ namespace Services.DoctorServices
             //    IsBooked = slot.Appointment is not null
             //});
         }
+
+
+        public async Task<IEnumerable<DoctorAppointmentDto>> GetDoctorAppointmentsAsync(string Email, AppointmentStatusDto? status = null)
+        {
+            if (string.IsNullOrWhiteSpace(Email))
+                throw new UnauthorizedException();
+
+            var DRepo = _unitOfWork.GetRepository<Doctor>();
+            var appointmentRepo = _unitOfWork.GetRepository<Appointment>();
+
+            var doctor = await DRepo.GetByIdAsync(new DoctorDetailsSpecification(Email));
+
+            if (doctor is null)
+                throw new DoctorNotFoundException("Doctor not found.");
+            AppointmentStatus? domainStatus = null;
+
+            if (status.HasValue)
+            {
+                domainStatus = status.Value switch
+                {
+                    AppointmentStatusDto.Pending => AppointmentStatus.Pending,
+                    AppointmentStatusDto.Confirmed => AppointmentStatus.Confirmed,
+                    AppointmentStatusDto.Canceled => AppointmentStatus.Canceled,
+                    AppointmentStatusDto.Completed => AppointmentStatus.Completed,
+                    AppointmentStatusDto.ReschedulePending => AppointmentStatus.ReschedulePending,
+
+                    _ => throw new BadRequestException("Invalid appointment status.")
+                };
+            }
+            var appointments = await appointmentRepo.GetAllAsync(new DoctorAppointmentsSpecification(doctor.Id, domainStatus));
+
+            return appointments.Select(a => new DoctorAppointmentDto
+            {
+                Id = a.Id,
+
+                Date = a.AvailabilitySlot.StartAt.ToString("yyyy-MM-dd"),
+                DateLabel = a.AvailabilitySlot.StartAt.ToString("MMM dd"),
+                Time = a.AvailabilitySlot.StartAt.ToString("hh:mm tt"),
+                Duration = $"{(int)a.AvailabilitySlot.Duration.TotalMinutes} mins",
+
+                PatientName = a.Patient.User.DisplayName,
+
+                AppointmentType = string.IsNullOrWhiteSpace(a.SessionName)
+                    ? "General Consultation"
+                    : a.SessionName,
+
+                VisitType = a.AvailabilitySlot.Type.ToString(),
+
+                Status = a.Status.ToString()
+            });
+        }
+
+        public async Task<ServiceResponse> ConfirmAppointmentAsync(string email, int appointmentId)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+                throw new UnauthorizedException();
+
+            var doctorRepo = _unitOfWork.GetRepository<Doctor>();
+            var appointmentRepo = _unitOfWork.GetRepository<Appointment>();
+
+            var doctor = await doctorRepo.GetByIdAsync(new DoctorDetailsSpecification(email));
+
+            if (doctor is null)
+                throw new DoctorNotFoundException("Doctor not found.");
+
+            var appointment = await appointmentRepo.GetByIdAsync(
+                new DoctorAppointmentByIdSpecification(doctor.Id, appointmentId));
+
+            if (appointment is null)
+                throw new BadRequestException("Appointment not found or does not belong to this doctor.");
+
+            if (appointment.Status != AppointmentStatus.Pending)
+                throw new BadRequestException("Only pending appointments can be confirmed.");
+
+            if (appointment.AvailabilitySlot.StartAt <= DateTime.Now)
+                throw new BadRequestException("Cannot confirm an appointment in the past.");
+
+            appointment.Status = AppointmentStatus.Confirmed;
+
+            appointmentRepo.Update(appointment);
+
+            await _unitOfWork.SaveChangesAsync();
+
+            await _notificationService.CreateAndSendAsync(
+                appointment.Patient.UserId,
+                "Appointment Confirmed",
+                $"Your appointment at {appointment.AvailabilitySlot.StartAt:dd/MM/yyyy hh:mm tt} has been confirmed.",
+                NotificationTypeDto.AppointmentConfirmed,
+                appointment.Id);
+
+            return new ServiceResponse
+            {
+                Status = true,
+                Message = "Appointment confirmed successfully."
+            };
+        }
+
+        public async Task<ServiceResponse> CancelAppointmentAsync(string email, int appointmentId)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+                throw new UnauthorizedException();
+
+            var doctorRepo = _unitOfWork.GetRepository<Doctor>();
+            var appointmentRepo = _unitOfWork.GetRepository<Appointment>();
+
+            var doctor = await doctorRepo.GetByIdAsync(new DoctorDetailsSpecification(email));
+
+            if (doctor is null)
+                throw new DoctorNotFoundException("Doctor not found.");
+
+            var appointment = await appointmentRepo.GetByIdAsync(
+                new DoctorAppointmentByIdSpecification(doctor.Id, appointmentId));
+
+            if (appointment is null)
+                throw new BadRequestException("Appointment not found or does not belong to this doctor.");
+
+            if (appointment.Status == AppointmentStatus.Canceled)
+                throw new BadRequestException("Appointment is already canceled.");
+
+            if (appointment.Status == AppointmentStatus.Completed)
+                throw new BadRequestException("Completed appointments cannot be canceled.");
+
+            appointment.Status = AppointmentStatus.Canceled;
+
+            appointmentRepo.Update(appointment);
+
+            await _unitOfWork.SaveChangesAsync();
+
+            await _notificationService.CreateAndSendAsync(
+                appointment.Patient.UserId,
+                "Appointment Canceled",
+                $"Your appointment at {appointment.AvailabilitySlot.StartAt:dd/MM/yyyy hh:mm tt} has been canceled.",
+                NotificationTypeDto.AppointmentCanceled,
+                appointment.Id);
+
+            return new ServiceResponse
+            {
+                Status = true,
+                Message = "Appointment canceled successfully."
+            };
+        }
+
+
+        public async Task<ServiceResponse> RequestRescheduleAppointmentAsync(string email,int appointmentId,RescheduleAppointmentDto dto)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+                throw new UnauthorizedException();
+
+            if (dto is null)
+                throw new BadRequestException(new List<string> { "Reschedule data is required." });
+
+            if (dto.NewStartAt <= DateTime.Now)
+                throw new BadRequestException(new List<string> { "New appointment time must be in the future." });
+
+            if (dto.DurationMinutes <= 0)
+                throw new BadRequestException(new List<string> { "Duration must be greater than zero." });
+
+            DomainLayer.Models.AppointmentType domainType = dto.Type switch
+            {
+                Shared.DTos.AppointmentDTos.AppointmentType.Online
+                    => DomainLayer.Models.AppointmentType.Online,
+
+                Shared.DTos.AppointmentDTos.AppointmentType.Offline
+                    => DomainLayer.Models.AppointmentType.Offline,
+
+                _ => throw new BadRequestException(new List<string> { "Invalid appointment type." })
+            };
+            var doctorRepo = _unitOfWork.GetRepository<Doctor>();
+            var appointmentRepo = _unitOfWork.GetRepository<Appointment>();
+            var slotRepo = _unitOfWork.GetRepository<AvailabilitySlot>();
+
+            var doctor = await doctorRepo.GetByIdAsync(new DoctorDetailsSpecification(email));
+
+            if (doctor is null)
+                throw new DoctorNotFoundException("Doctor not found.");
+
+            var appointment = await appointmentRepo.GetByIdAsync(
+                new DoctorAppointmentByIdSpecification(doctor.Id, appointmentId));
+
+            if (appointment is null)
+                throw new BadRequestException(new List<string> { "Appointment not found or does not belong to this doctor." });
+
+            if (appointment.AvailabilitySlot is null)
+                throw new BadRequestException(new List<string> { "This appointment has no slot to reschedule." });
+
+            if (appointment.Status != AppointmentStatus.Pending &&
+                appointment.Status != AppointmentStatus.Confirmed)
+                throw new BadRequestException(new List<string> { "Only pending or confirmed appointments can be rescheduled." });
+
+            var newDuration = TimeSpan.FromMinutes(dto.DurationMinutes);
+            var currentSlot = appointment.AvailabilitySlot;
+
+            var doctorSlots = await slotRepo.GetAllAsync(
+                new DoctorAvailabilitySlotsSpecification(doctor.Id));
+
+            var hasOverlap = doctorSlots.Any(slot =>
+                slot.Id != currentSlot.Id &&
+                IsOverlapping(dto.NewStartAt, newDuration, slot.StartAt, slot.Duration));
+
+            if (hasOverlap)
+                throw new BadRequestException(new List<string> { "This time overlaps with another slot." });
+
+            var oldStartAt = currentSlot.StartAt;
+
+            currentSlot.StartAt = dto.NewStartAt;
+            currentSlot.Duration = newDuration;
+            currentSlot.Type = (AppointmentType)dto.Type;
+
+            appointment.Status = AppointmentStatus.ReschedulePending;
+
+            slotRepo.Update(currentSlot);
+            appointmentRepo.Update(appointment);
+
+            await _unitOfWork.SaveChangesAsync();
+
+            await _notificationService.CreateAndSendAsync(
+                appointment.Patient.UserId,
+                "Appointment Reschedule Request",
+                $"Doctor requested to change your appointment from {oldStartAt:dd/MM/yyyy hh:mm tt} to {currentSlot.StartAt:dd/MM/yyyy hh:mm tt}.",
+                NotificationTypeDto.AppointmentRescheduled,
+                appointment.Id);
+
+            return new ServiceResponse
+            {
+                Status = true,
+                Message = "Reschedule request sent successfully."
+            };
+        }
+
+
 
         public async Task<ServiceResponse> UpdateAvailabilitySlotAsync(string Email, int SlotId, UpdateAvailabilitySlotDto dto)
         {
@@ -485,5 +720,13 @@ namespace Services.DoctorServices
             return fileResult;
         }
 
+
+        private static bool IsOverlapping(DateTime firstStart,TimeSpan firstDuration,DateTime secondStart,TimeSpan secondDuration)
+        {
+            var firstEnd = firstStart.Add(firstDuration);
+            var secondEnd = secondStart.Add(secondDuration);
+
+            return firstStart < secondEnd && secondStart < firstEnd;
+        }
     }
 }

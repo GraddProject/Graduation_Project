@@ -120,6 +120,53 @@ namespace Presentation.Controllers
         }
 
 
+        [HttpGet("GetAppointments")]
+        public async Task<ActionResult<IEnumerable<DoctorAppointmentDto>>> GetDoctorAppointments([FromQuery] AppointmentStatusDto? status)
+        {
+            var email = User.FindFirstValue(ClaimTypes.Email);
+
+            var result = await _serviceManger.DoctorService.GetDoctorAppointmentsAsync(email!, status);
+
+            return Ok(result);
+        }
+
+
+        [HttpPut("ConfirmAppointment")]
+        public async Task<ActionResult<ServiceResponse>> ConfirmAppointment(int appointmentId)
+        {
+            var email = User.FindFirstValue(ClaimTypes.Email);
+
+            var result = await _serviceManger.DoctorService.ConfirmAppointmentAsync(email!, appointmentId);
+
+            return Ok(result);
+        }
+
+
+        [HttpPut("CancelAppointment")]
+        public async Task<ActionResult<ServiceResponse>> CancelAppointment(int appointmentId)
+        {
+            var email = User.FindFirstValue(ClaimTypes.Email);
+
+            var result = await _serviceManger.DoctorService.CancelAppointmentAsync(email!, appointmentId);
+
+            return Ok(result);
+        }
+
+
+        [HttpPut("appointments/{appointmentId}/reschedule")]
+        public async Task<ActionResult<ServiceResponse>> RequestReschedule(
+    int appointmentId,
+    [FromBody] RescheduleAppointmentDto dto)
+        {
+            var email = User.FindFirstValue(ClaimTypes.Email);
+
+            var result = await _serviceManger.DoctorService
+                .RequestRescheduleAppointmentAsync(email!, appointmentId, dto);
+
+            return Ok(result);
+        }
+
+
         [HttpPut("UpdateAvailabilitySlot")]
         public async Task<ActionResult<ServiceResponse>> UpdateAvailabilitySlot(int SlotId, UpdateAvailabilitySlotDto updateAvailabilitySlot)
         {

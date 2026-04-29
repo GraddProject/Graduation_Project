@@ -2,6 +2,7 @@
 using ServicesAbstraction.DoctorAbstraction;
 using ServicesAbstraction.IAdminAbstraction;
 using ServicesAbstraction.ModelAbstraction;
+using ServicesAbstraction.NotificationAbstraction;
 using ServicesAbstraction.PatientAbstraction;
 using System;
 using System.Collections.Generic;
@@ -18,5 +19,6 @@ namespace ServicesAbstraction
         IAdminService AdminService { get; }
         IPatientService PatientService { get; }
         IModelPredictionService ModelPredictionService { get; }
+        INotificationService NotificationService { get; }
     }
 }

@@ -9,6 +9,8 @@ namespace DomainLayer.Models
     public class Appointment
     {
         public int Id { get; set; }
+        public string SessionName { get; set; } = string.Empty;
+
         public int PatientId { get; set; }
         public Patient Patient { get; set; } = default!;
 
@@ -16,7 +18,7 @@ namespace DomainLayer.Models
         public Doctor Doctor { get; set; } = default!;
 
         public int AvailabilitySlotId { get; set; }
-        public AvailabilitySlot AvailabilitySlot { get; set; }= default!;
+        public AvailabilitySlot AvailabilitySlot { get; set; } = default!;
 
         public AppointmentStatus Status { get; set; } = AppointmentStatus.Pending;
 

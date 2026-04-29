@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DomainLayer.Models
+namespace Shared.DTos.AppointmentDTos
 {
-    public enum AppointmentStatus
+    public enum AppointmentStatusDto
     {
         Pending = 0,
         Confirmed = 1,

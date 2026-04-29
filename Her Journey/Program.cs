@@ -1,12 +1,15 @@
 
 using DomainLayer.Contracts;
 using Her_Journey.Extensions;
+using Her_Journey.Hubs;
+using Her_Journey.SignalR;
 using Persistence;
 using Services;
 using Services.AuthServices;
 using Services.DoctorServices;
 using ServicesAbstraction.AuthServices;
 using ServicesAbstraction.DoctorAbstraction;
+using ServicesAbstraction.NotificationAbstraction;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
@@ -51,7 +54,9 @@ namespace Her_Journey
             builder.Services.AddWebApplicationServices();
 
 
+            builder.Services.AddSignalR();
 
+            builder.Services.AddScoped<INotificationSender, SignalRNotificationSender>();
 
             var app = builder.Build();
 
@@ -70,7 +75,7 @@ namespace Her_Journey
             app.UseAuthentication();
             app.UseAuthorization();
 
-
+            app.MapHub<NotificationHub>("/hubs/notifications");
             app.MapControllers();
 
             app.Run();

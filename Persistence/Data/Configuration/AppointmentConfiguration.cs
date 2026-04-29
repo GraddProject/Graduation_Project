@@ -29,7 +29,7 @@ namespace Persistence.Data.Configuration
             builder.HasOne(A => A.AvailabilitySlot)
                 .WithOne(AS => AS.Appointment)
                 .HasForeignKey<Appointment>(A => A.AvailabilitySlotId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict);
 
             builder.Property(a => a.Status)
                    .HasConversion<string>();

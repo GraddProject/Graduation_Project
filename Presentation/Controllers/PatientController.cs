@@ -39,6 +39,39 @@ namespace Presentation.Controllers
         }
 
 
+        [HttpPost("BookAppointment")]
+        public async Task<ActionResult<ServiceResponse>> BookAppointment(BookAppointmentDto dto)
+        {
+            var Email = User.FindFirstValue(ClaimTypes.Email);
+
+            var result = await _serviceManger.PatientService.BookAppointmentAsync(Email!,dto);
+
+            return Ok(result);
+        }
+
+        [HttpPut("appointments/{appointmentId}/accept-reschedule")]
+        public async Task<ActionResult<ServiceResponse>> AcceptReschedule(int appointmentId)
+        {
+            var email = User.FindFirstValue(ClaimTypes.Email);
+
+            var result = await _serviceManger.PatientService
+                .AcceptRescheduleAsync(email!, appointmentId);
+
+            return Ok(result);
+        }
+
+        [HttpPut("appointments/{appointmentId}/reject-reschedule")]
+        public async Task<ActionResult<ServiceResponse>> RejectReschedule(int appointmentId)
+        {
+            var email = User.FindFirstValue(ClaimTypes.Email);
+
+            var result = await _serviceManger.PatientService
+                .RejectRescheduleAsync(email!, appointmentId);
+
+            return Ok(result);
+        }
+
+
         [HttpPost("UploadMedicalTest")]
         public async Task<ActionResult<MedicalTestDto>> UploadMedicalTest([FromForm] UploadMedicalTestDto dto)
         {

@@ -6,6 +6,7 @@ using Services.AuthServices;
 using Services.Common;
 using Services.DoctorServices;
 using Services.ModelServices;
+using Services.NotificationServices;
 using Services.PatientServices;
 using ServicesAbstraction;
 using ServicesAbstraction.AuthServices;
@@ -13,6 +14,7 @@ using ServicesAbstraction.Common;
 using ServicesAbstraction.DoctorAbstraction;
 using ServicesAbstraction.IAdminAbstraction;
 using ServicesAbstraction.ModelAbstraction;
+using ServicesAbstraction.NotificationAbstraction;
 using ServicesAbstraction.PatientAbstraction;
 using Shared.DTos.MlDTos;
 using System;
@@ -47,6 +49,10 @@ namespace Services
             Services.AddScoped<IPatientService, PatientService>();
             Services.AddScoped<Func<IPatientService>>(Provider =>
             () => Provider.GetRequiredService<IPatientService>());
+
+            Services.AddScoped<INotificationService, NotificationService>();
+            Services.AddScoped<Func<INotificationService>>(Provider =>
+            () => Provider.GetRequiredService<INotificationService>());
 
 
             Services.AddScoped<IFileStorageService, GoogleCloudStorageService>();

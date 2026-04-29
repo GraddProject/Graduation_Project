@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Persistence.Data;
 
@@ -11,9 +12,11 @@ using Persistence.Data;
 namespace Persistence.Data.Migrations
 {
     [DbContext(typeof(StoreIdentityDbContext))]
-    partial class StoreIdentityDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260424025719_AddNotficationTable")]
+    partial class AddNotficationTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -120,10 +123,6 @@ namespace Persistence.Data.Migrations
                     b.Property<int>("PatientId")
                         .HasColumnType("int");
 
-                    b.Property<string>("SessionName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -137,7 +136,7 @@ namespace Persistence.Data.Migrations
 
                     b.HasIndex("PatientId");
 
-                    b.ToTable("Appointment", (string)null);
+                    b.ToTable("Appointment");
                 });
 
             modelBuilder.Entity("DomainLayer.Models.AvailabilitySlot", b =>
@@ -165,7 +164,7 @@ namespace Persistence.Data.Migrations
 
                     b.HasIndex("DoctorId");
 
-                    b.ToTable("AvailabilitySlot", (string)null);
+                    b.ToTable("AvailabilitySlot");
                 });
 
             modelBuilder.Entity("DomainLayer.Models.Doctor", b =>
@@ -188,7 +187,7 @@ namespace Persistence.Data.Migrations
                     b.HasIndex("UserId")
                         .IsUnique();
 
-                    b.ToTable("Doctor", (string)null);
+                    b.ToTable("Doctor");
                 });
 
             modelBuilder.Entity("DomainLayer.Models.MedicalHistory", b =>
@@ -229,7 +228,7 @@ namespace Persistence.Data.Migrations
 
                     b.HasIndex("PatientId");
 
-                    b.ToTable("MedicalHistory", (string)null);
+                    b.ToTable("MedicalHistory");
                 });
 
             modelBuilder.Entity("DomainLayer.Models.MedicalTest", b =>
@@ -262,7 +261,7 @@ namespace Persistence.Data.Migrations
 
                     b.HasIndex("PatientId");
 
-                    b.ToTable("MedicalTest", (string)null);
+                    b.ToTable("MedicalTest");
                 });
 
             modelBuilder.Entity("DomainLayer.Models.Notification", b =>
@@ -308,7 +307,7 @@ namespace Persistence.Data.Migrations
 
                     b.HasIndex("UserId", "IsRead");
 
-                    b.ToTable("Notification", (string)null);
+                    b.ToTable("Notification");
                 });
 
             modelBuilder.Entity("DomainLayer.Models.Patient", b =>
@@ -333,7 +332,7 @@ namespace Persistence.Data.Migrations
                     b.HasIndex("UserId")
                         .IsUnique();
 
-                    b.ToTable("Patient", (string)null);
+                    b.ToTable("Patient");
                 });
 
             modelBuilder.Entity("DomainLayer.Models.PreScription", b =>
@@ -376,7 +375,7 @@ namespace Persistence.Data.Migrations
 
                     b.HasIndex("MedicalHistoryId");
 
-                    b.ToTable("PreScription", (string)null);
+                    b.ToTable("PreScription");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -445,7 +444,7 @@ namespace Persistence.Data.Migrations
                     b.HasOne("DomainLayer.Models.AvailabilitySlot", "AvailabilitySlot")
                         .WithOne("Appointment")
                         .HasForeignKey("DomainLayer.Models.Appointment", "AvailabilitySlotId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("DomainLayer.Models.Doctor", "Doctor")
@@ -524,7 +523,7 @@ namespace Persistence.Data.Migrations
                     b.HasOne("DomainLayer.Models.Appointment", "Appointment")
                         .WithMany()
                         .HasForeignKey("AppointmentId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("DomainLayer.IdentityModule.ApplicationUser", "User")
                         .WithMany("Notifications")
@@ -551,7 +550,7 @@ namespace Persistence.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.OwnsOne("DomainLayer.Models.Patient.MedicalInfo#DomainLayer.Models.MedicalData", "MedicalInfo", b1 =>
+                    b.OwnsOne("DomainLayer.Models.MedicalData", "MedicalInfo", b1 =>
                         {
                             b1.Property<int>("PatientId")
                                 .HasColumnType("int");
@@ -595,7 +594,7 @@ namespace Persistence.Data.Migrations
 
                             b1.HasKey("PatientId");
 
-                            b1.ToTable("Patient", (string)null);
+                            b1.ToTable("Patient");
 
                             b1.WithOwner()
                                 .HasForeignKey("PatientId");

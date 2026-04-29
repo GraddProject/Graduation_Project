@@ -32,6 +32,15 @@ namespace ServicesAbstraction.DoctorAbstraction
 
         public Task<IEnumerable<AvailabilitySlotDto>> GetMyAvailabilitySlotsAsync(string Email);
 
+        Task<IEnumerable<DoctorAppointmentDto>> GetDoctorAppointmentsAsync(string Email, AppointmentStatusDto? status = null);
+
+        Task<ServiceResponse> ConfirmAppointmentAsync(string email, int appointmentId);
+
+        Task<ServiceResponse> CancelAppointmentAsync(string email, int appointmentId);
+
+
+        Task<ServiceResponse> RequestRescheduleAppointmentAsync(string email,int appointmentId,RescheduleAppointmentDto dto);
+
         public Task<ServiceResponse> UpdateAvailabilitySlotAsync(string Email, int SlotId, UpdateAvailabilitySlotDto updateAvailabilitySlot);
 
         public Task<ServiceResponse> DeleteAvailabilitySlotAsync(string email, int slotId);
