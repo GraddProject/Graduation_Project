@@ -24,6 +24,97 @@ namespace Services.DoctorServices
     public class DoctorService(IUnitOfWork _unitOfWork, IMapper _mapper, IFileStorageService _fileStorageService,
                                 INotificationService _notificationService) : IDoctorService
     {
+
+
+        public async Task<ServiceResponse> AddAvailabilitySlotsRangeAsync(string email,AddAvailabilitySlotsRangeDto dto)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+                throw new UnauthorizedException();
+
+            if (dto is null)
+                throw new BadRequestException("Availability slots data is required.");
+
+            if (dto.StartAt <= DateTime.Now)
+                throw new BadRequestException("Start time must be in the future.");
+
+            if (dto.EndAt <= dto.StartAt)
+                throw new BadRequestException("End time must be after start time.");
+
+            if (dto.SessionDurationInMinutes <= 0)
+                throw new BadRequestException("Session duration must be greater than zero.");
+
+            var totalMinutes = (dto.EndAt - dto.StartAt).TotalMinutes;
+
+            if (totalMinutes < dto.SessionDurationInMinutes)
+                throw new BadRequestException("Time range must be greater than or equal to session duration.");
+
+            if (totalMinutes % dto.SessionDurationInMinutes != 0)
+                throw new BadRequestException("Time range must be divisible by session duration.");
+
+            var domainType = dto.Type switch
+            {
+                Shared.DTos.AppointmentDTos.AppointmentType.Online
+                    => DomainLayer.Models.AppointmentType.Online,
+
+                Shared.DTos.AppointmentDTos.AppointmentType.Offline
+                    => DomainLayer.Models.AppointmentType.Offline,
+
+                _ => throw new BadRequestException("Invalid appointment type.")
+            };
+
+            var doctorRepo = _unitOfWork.GetRepository<Doctor>();
+            var slotRepo = _unitOfWork.GetRepository<AvailabilitySlot>();
+
+            var doctor = await doctorRepo.GetByIdAsync(new DoctorDetailsSpecification(email));
+
+            if (doctor is null)
+                throw new DoctorNotFoundException("Doctor not found.");
+
+            var existingSlots = await slotRepo.GetAllAsync(
+                new DoctorAvailabilitySlotsSpecification(doctor.Id));
+
+            var generatedSlots = new List<AvailabilitySlot>();
+
+            var currentStart = dto.StartAt;
+            var sessionDuration = TimeSpan.FromMinutes(dto.SessionDurationInMinutes);
+
+            while (currentStart < dto.EndAt)
+            {
+                var currentEnd = currentStart.Add(sessionDuration);
+
+                var hasOverlap = existingSlots.Any(slot =>
+                    currentStart < slot.StartAt.Add(slot.Duration) &&
+                    currentEnd > slot.StartAt);
+
+                if (hasOverlap)
+                {
+                    throw new BadRequestException(
+                        $"Generated slot from {currentStart:dd/MM/yyyy hh:mm tt} to {currentEnd:hh:mm tt} overlaps with an existing slot.");
+                }
+
+                generatedSlots.Add(new AvailabilitySlot
+                {
+                    DoctorId = doctor.Id,
+                    StartAt = currentStart,
+                    Duration = sessionDuration,
+                    Type = domainType
+                });
+
+                currentStart = currentEnd;
+            }
+
+            foreach (var slot in generatedSlots)
+                await slotRepo.AddAsync(slot);
+
+            await _unitOfWork.SaveChangesAsync();
+
+            return new ServiceResponse
+            {
+                Status = true,
+                Message = $"{generatedSlots.Count} availability slots added successfully."
+            };
+        }
+
         public async Task<bool> AddAvailabilitySlotAsync(string Email, AddAvailabilitySlotDto addAvailabilitySlot)
         {
             if (string.IsNullOrWhiteSpace(Email))
@@ -73,6 +164,82 @@ namespace Services.DoctorServices
             await SlotRepo.AddAsync(availabilitySlot);
             return await _unitOfWork.SaveChangesAsync() > 0;
         }
+
+
+
+
+        public async Task<IEnumerable<DoctorAvailabilityOverviewDto>> GetAvailabilityOverviewAsync(string email,AvailabilitySlotFilterDto filter = AvailabilitySlotFilterDto.All)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+                throw new UnauthorizedException();
+
+            var doctorRepo = _unitOfWork.GetRepository<Doctor>();
+            var slotRepo = _unitOfWork.GetRepository<AvailabilitySlot>();
+
+            var doctor = await doctorRepo.GetByIdAsync(new DoctorDetailsSpecification(email));
+
+            if (doctor is null)
+                throw new DoctorNotFoundException("Doctor not found.");
+
+            var slots = await slotRepo.GetAllAsync(
+                new DoctorAvailabilitySlotsSpecification(doctor.Id));
+
+            var bookedStatuses = new[]{AppointmentStatus.Pending,AppointmentStatus.Confirmed};
+
+            var filteredSlots = slots.Where(slot =>
+            {
+                var hasActiveBooking =
+                    slot.Appointment is not null &&
+                    bookedStatuses.Contains(slot.Appointment.Status);
+
+                var isAvailable = slot.Appointment is null;
+
+                return filter switch
+                {
+                    AvailabilitySlotFilterDto.Booked => hasActiveBooking,
+
+                    AvailabilitySlotFilterDto.Available => isAvailable,
+
+                    AvailabilitySlotFilterDto.All => hasActiveBooking || isAvailable,
+
+                    _ => hasActiveBooking || isAvailable
+                };
+            });
+
+            return filteredSlots.Select(slot =>
+            {
+                var startAt = slot.StartAt;
+                var endAt = slot.StartAt.Add(slot.Duration);
+
+                var hasActiveBooking =
+                    slot.Appointment is not null &&
+                    bookedStatuses.Contains(slot.Appointment.Status);
+
+                var appointmentStatus = hasActiveBooking
+                    ? slot.Appointment!.Status.ToString()
+                    : null;
+
+                return new DoctorAvailabilityOverviewDto
+                {
+                    Id = slot.Id,
+
+                    Date = startAt.ToString("yyyy-MM-dd"),
+                    DateLabel = startAt.ToString("ddd, MMM dd"),
+                    Time = $"{startAt:hh:mm tt} - {endAt:hh:mm tt}",
+                    Duration = $"{(int)slot.Duration.TotalMinutes} min",
+
+                    VisitType = slot.Type.ToString(),
+
+                    BookingStatus = hasActiveBooking ? "Booked" : "Available",
+                    AppointmentStatus = appointmentStatus,
+
+                    DisplayStatus = hasActiveBooking
+                        ? $"Booked ({appointmentStatus})"
+                        : "Available"
+                };
+            });
+        }
+
 
 
         public async Task<IEnumerable<AvailabilitySlotDto>> GetMyAvailabilitySlotsAsync(string Email)
@@ -131,7 +298,7 @@ namespace Services.DoctorServices
                     _ => throw new BadRequestException("Invalid appointment status.")
                 };
             }
-            var appointments = await appointmentRepo.GetAllAsync(new DoctorAppointmentsSpecification(doctor.Id, domainStatus));
+            var appointments = await appointmentRepo.GetAllAsync(new DashBoardDoctorAppointmentsSpecification(doctor.Id, domainStatus));
 
             return appointments.Select(a => new DoctorAppointmentDto
             {
@@ -328,6 +495,58 @@ namespace Services.DoctorServices
             {
                 Status = true,
                 Message = "Reschedule request sent successfully."
+            };
+        }
+
+
+
+        public async Task<DoctorAppointmentSummaryDto> GetDoctorAppointmentsSummaryAsync(string email)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+                throw new UnauthorizedException();
+
+            var doctorRepo = _unitOfWork.GetRepository<Doctor>();
+            var appointmentRepo = _unitOfWork.GetRepository<Appointment>();
+
+            var doctor = await doctorRepo.GetByIdAsync(new DoctorDetailsSpecification(email));
+
+            if (doctor is null)
+                throw new DoctorNotFoundException("Doctor not found.");
+
+            var now = DateTime.Now;
+            var monthStart = new DateTime(now.Year, now.Month, 1);
+            var nextMonthStart = monthStart.AddMonths(1);
+            var next7Days = now.AddDays(7);
+
+            var appointments = await appointmentRepo.GetAllAsync(new DoctorAppointmentsSummarySpecification(doctor.Id));
+
+            var appointmentsList = appointments.ToList();
+
+            return new DoctorAppointmentSummaryDto
+            {
+                TotalAppointments = appointmentsList.Count(a =>
+                    a.AvailabilitySlot is not null &&
+                    a.AvailabilitySlot.StartAt >= monthStart &&
+                    a.AvailabilitySlot.StartAt < nextMonthStart &&
+                    a.Status != AppointmentStatus.Canceled),
+
+                Upcoming = appointmentsList.Count(a =>
+                    a.AvailabilitySlot is not null &&
+                    a.AvailabilitySlot.StartAt >= now &&
+                    a.AvailabilitySlot.StartAt <= next7Days &&
+                    a.Status == AppointmentStatus.Confirmed),
+
+                Completed = appointmentsList.Count(a =>
+                    a.AvailabilitySlot is not null &&
+                    a.AvailabilitySlot.StartAt >= monthStart &&
+                    a.AvailabilitySlot.StartAt < nextMonthStart &&
+                    a.Status == AppointmentStatus.Completed),
+
+                Pending = appointmentsList.Count(a =>
+                    a.Status == AppointmentStatus.Pending),
+
+                ReschedulePending = appointmentsList.Count(a =>
+                    a.Status == AppointmentStatus.ReschedulePending)
             };
         }
 
@@ -728,5 +947,7 @@ namespace Services.DoctorServices
 
             return firstStart < secondEnd && secondStart < firstEnd;
         }
+
+        
     }
 }

@@ -73,7 +73,7 @@ namespace Presentation.Controllers
 
 
         [HttpDelete("patients/{patientId}/medical-histories/{medicalHistoryId}/prescriptions/{prescriptionId}")]
-        public async Task<ActionResult<ServiceResponse>> DeletePrescription(int patientId,int medicalHistoryId,int prescriptionId)
+        public async Task<ActionResult<ServiceResponse>> DeletePrescription(int patientId, int medicalHistoryId, int prescriptionId)
         {
             var email = User.FindFirstValue(ClaimTypes.Email);
             var result = await _serviceManger.DoctorService.DeletePreScriptionAsync(email!, patientId, medicalHistoryId, prescriptionId);
@@ -99,25 +99,57 @@ namespace Presentation.Controllers
             return Ok(result);
         }
 
+
+
+        [HttpPost("AddAvailabilitySlotsRange")]
+        public async Task<ActionResult<ServiceResponse>> AddAvailabilitySlotsRange(AddAvailabilitySlotsRangeDto dto)
+        {
+            var email = User.FindFirstValue(ClaimTypes.Email);
+
+            var result = await _serviceManger.DoctorService
+                .AddAvailabilitySlotsRangeAsync(email!, dto);
+
+            return Ok(result);
+        }
+
+
+
         [HttpPost("AddAvailabilitySlot")]
         public async Task<ActionResult<bool>> AddAvailabilitySlot(AddAvailabilitySlotDto dto)
         {
             var Email = User.FindFirstValue(ClaimTypes.Email);
 
-       
+
             var result = await _serviceManger.DoctorService.AddAvailabilitySlotAsync(Email, dto);
 
             return Ok(result);
         }
 
-        [HttpGet("GetAllAvailbleSlots")]
-        public async Task<ActionResult<IEnumerable<AvailabilitySlotDto>>> GetAllAvailbleSlots()
-        {
-            var Email = User.FindFirstValue(ClaimTypes.Email);
 
-            var result = await _serviceManger.DoctorService.GetMyAvailabilitySlotsAsync(Email!);
+
+
+
+        [HttpGet("GetAvailabilityOverview")]
+        public async Task<ActionResult<IEnumerable<DoctorAvailabilityOverviewDto>>> GetAvailabilityOverview([FromQuery] AvailabilitySlotFilterDto filter = AvailabilitySlotFilterDto.All)
+        {
+            var email = User.FindFirstValue(ClaimTypes.Email);
+
+            var result = await _serviceManger.DoctorService
+                .GetAvailabilityOverviewAsync(email!, filter);
+
             return Ok(result);
         }
+
+
+
+        //[HttpGet("GetAllAvailbleSlots")]
+        //public async Task<ActionResult<IEnumerable<AvailabilitySlotDto>>> GetAllAvailbleSlots()
+        //{
+        //    var Email = User.FindFirstValue(ClaimTypes.Email);
+
+        //    var result = await _serviceManger.DoctorService.GetMyAvailabilitySlotsAsync(Email!);
+        //    return Ok(result);
+        //}
 
 
         [HttpGet("GetAppointments")]
@@ -154,9 +186,7 @@ namespace Presentation.Controllers
 
 
         [HttpPut("appointments/{appointmentId}/reschedule")]
-        public async Task<ActionResult<ServiceResponse>> RequestReschedule(
-    int appointmentId,
-    [FromBody] RescheduleAppointmentDto dto)
+        public async Task<ActionResult<ServiceResponse>> RequestReschedule(int appointmentId, [FromBody] RescheduleAppointmentDto dto)
         {
             var email = User.FindFirstValue(ClaimTypes.Email);
 
@@ -166,6 +196,17 @@ namespace Presentation.Controllers
             return Ok(result);
         }
 
+
+        [HttpGet("Summary")]
+        public async Task<ActionResult<DoctorAppointmentSummaryDto>> GetAppointmentsSummary()
+        {
+            var email = User.FindFirstValue(ClaimTypes.Email);
+
+            var result = await _serviceManger.DoctorService
+                .GetDoctorAppointmentsSummaryAsync(email!);
+
+            return Ok(result);
+        }
 
         [HttpPut("UpdateAvailabilitySlot")]
         public async Task<ActionResult<ServiceResponse>> UpdateAvailabilitySlot(int SlotId, UpdateAvailabilitySlotDto updateAvailabilitySlot)

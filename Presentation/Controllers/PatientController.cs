@@ -39,6 +39,18 @@ namespace Presentation.Controllers
         }
 
 
+        [HttpGet("GetMyAppointments")]
+        public async Task<ActionResult<IEnumerable<PatientAppointmentDto>>> GetMyAppointments([FromQuery] AppointmentStatusDto? status)
+        {
+            var email = User.FindFirstValue(ClaimTypes.Email);
+
+            var result = await _serviceManger.PatientService
+                .GetMyAppointmentsAsync(email!, status);
+
+            return Ok(result);
+        }
+
+
         [HttpPost("BookAppointment")]
         public async Task<ActionResult<ServiceResponse>> BookAppointment(BookAppointmentDto dto)
         {
@@ -49,7 +61,20 @@ namespace Presentation.Controllers
             return Ok(result);
         }
 
-        [HttpPut("appointments/{appointmentId}/accept-reschedule")]
+
+        [HttpDelete("CancelAppointment")]
+        public async Task<ActionResult<ServiceResponse>> CancelAppointment(int appointmentId)
+        {
+            var email = User.FindFirstValue(ClaimTypes.Email);
+
+            var result = await _serviceManger.PatientService.CancelAppointmentAsync(email!, appointmentId);
+
+            return Ok(result);
+        }
+
+
+
+        [HttpPut("AcceptReschedule")]
         public async Task<ActionResult<ServiceResponse>> AcceptReschedule(int appointmentId)
         {
             var email = User.FindFirstValue(ClaimTypes.Email);
@@ -60,7 +85,7 @@ namespace Presentation.Controllers
             return Ok(result);
         }
 
-        [HttpPut("appointments/{appointmentId}/reject-reschedule")]
+        [HttpPut("RejectReschedule")]
         public async Task<ActionResult<ServiceResponse>> RejectReschedule(int appointmentId)
         {
             var email = User.FindFirstValue(ClaimTypes.Email);

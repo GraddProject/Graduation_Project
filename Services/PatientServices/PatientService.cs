@@ -68,6 +68,61 @@ namespace Services.PatientServices
         }
 
 
+        public async Task<IEnumerable<PatientAppointmentDto>> GetMyAppointmentsAsync(string email, AppointmentStatusDto? status = null)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+                throw new UnauthorizedException();
+
+            var patientRepo = _unitOfWork.GetRepository<Patient>();
+            var appointmentRepo = _unitOfWork.GetRepository<Appointment>();
+
+            var patient = await patientRepo.GetByIdAsync(
+                new PatientByEmailForAppointmentSpecification(email));
+
+            if (patient is null)
+                throw new PatientNotFoundException(email);
+
+            AppointmentStatus? domainStatus = null;
+
+            if (status.HasValue)
+            {
+                domainStatus = status.Value switch
+                {
+                    AppointmentStatusDto.Pending => AppointmentStatus.Pending,
+                    AppointmentStatusDto.Confirmed => AppointmentStatus.Confirmed,
+                    AppointmentStatusDto.Canceled => AppointmentStatus.Canceled,
+                    AppointmentStatusDto.Completed => AppointmentStatus.Completed,
+                    AppointmentStatusDto.ReschedulePending => AppointmentStatus.ReschedulePending,
+
+                    _ => throw new BadRequestException("Invalid appointment status.")
+                };
+            }
+
+            var appointments = await appointmentRepo.GetAllAsync(
+                new PatientAppointmentsSpecificationStatus(patient.Id, domainStatus));
+
+            return appointments.Select(a => new PatientAppointmentDto
+            {
+                Id = a.Id,
+
+                Date = a.AvailabilitySlot.StartAt.ToString("yyyy-MM-dd"),
+                DateLabel = a.AvailabilitySlot.StartAt.ToString("MMM dd"),
+                Time = a.AvailabilitySlot.StartAt.ToString("hh:mm tt"),
+                Duration = $"{(int)a.AvailabilitySlot.Duration.TotalMinutes} mins",
+
+                DoctorName = a.Doctor.User.DisplayName,
+
+                AppointmentType = string.IsNullOrWhiteSpace(a.SessionName)
+                    ? "General Consultation"
+                    : a.SessionName,
+
+                VisitType = a.AvailabilitySlot.Type.ToString(),
+
+                Status = a.Status.ToString()
+            });
+        }
+
+
 
         public async Task<ServiceResponse> BookAppointmentAsync(string Email, BookAppointmentDto dto)
         {
@@ -132,6 +187,71 @@ namespace Services.PatientServices
             {
                 Status = true,
                 Message = "Appointment request sent successfully."
+            };
+        }
+
+
+
+        public async Task<ServiceResponse> CancelAppointmentAsync(string email, int appointmentId)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+                throw new UnauthorizedException();
+
+            var patientRepo = _unitOfWork.GetRepository<Patient>();
+            var appointmentRepo = _unitOfWork.GetRepository<Appointment>();
+
+            var patient = await patientRepo.GetByIdAsync(
+                new PatientByEmailForAppointmentSpecification(email));
+
+            if (patient is null)
+                throw new PatientNotFoundException(email);
+
+            var appointment = await appointmentRepo.GetByIdAsync(
+                new PatientAppointmentByIdSpecification(patient.Id, appointmentId));
+
+            if (appointment is null)
+                throw new BadRequestException(new List<string>
+        {
+            "Appointment not found or does not belong to this patient."
+        });
+
+            if (appointment.Status != AppointmentStatus.Pending &&
+                appointment.Status != AppointmentStatus.Confirmed)
+            {
+                throw new BadRequestException(new List<string>
+        {
+            "Only pending or confirmed appointments can be canceled."
+        });
+            }
+
+            if (appointment.AvailabilitySlot is null)
+                throw new BadRequestException(new List<string>
+        {
+            "Appointment slot not found."
+        });
+
+            var doctorUserId = appointment.Doctor.UserId;
+            var patientName = patient.User.DisplayName;
+            var appointmentTime = appointment.AvailabilitySlot.StartAt;
+            var sessionName = string.IsNullOrWhiteSpace(appointment.SessionName)
+                ? "General Consultation"
+                : appointment.SessionName;
+
+            appointmentRepo.Remove(appointment);
+
+            await _unitOfWork.SaveChangesAsync();
+
+            await _notificationService.CreateAndSendAsync(
+                doctorUserId,
+                "Appointment Canceled By Patient",
+                $"{patientName} canceled {sessionName} at {appointmentTime:dd/MM/yyyy hh:mm tt}.",
+                NotificationTypeDto.AppointmentCanceled,
+                null);
+
+            return new ServiceResponse
+            {
+                Status = true,
+                Message = "Appointment canceled successfully. The slot is available again."
             };
         }
 
@@ -394,6 +514,8 @@ namespace Services.PatientServices
 
             return $"medical-tests/patients/{patientId}/{now:yyyy}/{now:MM}/{uniqueFileName}";
         }
+
+
     }
 }
 
