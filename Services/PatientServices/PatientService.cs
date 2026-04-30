@@ -82,6 +82,8 @@ namespace Services.PatientServices
             if (patient is null)
                 throw new PatientNotFoundException(email);
 
+            await CompleteExpiredConfirmedAppointmentsForPatientAsync(patient.Id);
+
             AppointmentStatus? domainStatus = null;
 
             if (status.HasValue)
@@ -515,7 +517,30 @@ namespace Services.PatientServices
             return $"medical-tests/patients/{patientId}/{now:yyyy}/{now:MM}/{uniqueFileName}";
         }
 
+        private async Task CompleteExpiredConfirmedAppointmentsForPatientAsync(int patientId)
+        {
+            var appointmentRepo = _unitOfWork.GetRepository<Appointment>();
 
+            var appointments = await appointmentRepo.GetAllAsync(
+                new PatientConfirmedAppointmentsSpecification(patientId));
+
+            var now = DateTime.Now;
+
+            var expiredAppointments = appointments
+                .Where(a => a.AvailabilitySlot.StartAt.Add(a.AvailabilitySlot.Duration) <= now)
+                .ToList();
+
+            if (!expiredAppointments.Any())
+                return;
+
+            foreach (var appointment in expiredAppointments)
+            {
+                appointment.Status = AppointmentStatus.Completed;
+                appointmentRepo.Update(appointment);
+            }
+
+            await _unitOfWork.SaveChangesAsync();
+        }
     }
 }
 

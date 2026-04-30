@@ -474,7 +474,7 @@ namespace Services.DoctorServices
 
             currentSlot.StartAt = dto.NewStartAt;
             currentSlot.Duration = newDuration;
-            currentSlot.Type = (AppointmentType)dto.Type;
+            currentSlot.Type = domainType;
 
             appointment.Status = AppointmentStatus.ReschedulePending;
 
