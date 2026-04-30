@@ -26,7 +26,7 @@ namespace Services.DoctorServices
     {
 
 
-        public async Task<ServiceResponse> AddAvailabilitySlotsRangeAsync(string email,AddAvailabilitySlotsRangeDto dto)
+        public async Task<ServiceResponse> AddAvailabilitySlotsRangeAsync(string email, AddAvailabilitySlotsRangeDto dto)
         {
             if (string.IsNullOrWhiteSpace(email))
                 throw new UnauthorizedException();
@@ -168,7 +168,7 @@ namespace Services.DoctorServices
 
 
 
-        public async Task<IEnumerable<DoctorAvailabilityOverviewDto>> GetAvailabilityOverviewAsync(string email,AvailabilitySlotFilterDto filter = AvailabilitySlotFilterDto.All)
+        public async Task<IEnumerable<DoctorAvailabilityOverviewDto>> GetAvailabilityOverviewAsync(string email, AvailabilitySlotFilterDto filter = AvailabilitySlotFilterDto.All)
         {
             if (string.IsNullOrWhiteSpace(email))
                 throw new UnauthorizedException();
@@ -181,28 +181,28 @@ namespace Services.DoctorServices
             if (doctor is null)
                 throw new DoctorNotFoundException("Doctor not found.");
 
+            await CompleteExpiredConfirmedAppointmentsForDoctorAsync(doctor.Id);
+
             var slots = await slotRepo.GetAllAsync(
                 new DoctorAvailabilitySlotsSpecification(doctor.Id));
 
-            var bookedStatuses = new[]{AppointmentStatus.Pending,AppointmentStatus.Confirmed};
-
             var filteredSlots = slots.Where(slot =>
             {
-                var hasActiveBooking =
+                var isBooked =
                     slot.Appointment is not null &&
-                    bookedStatuses.Contains(slot.Appointment.Status);
+                    slot.Appointment.Status == AppointmentStatus.Confirmed;
 
                 var isAvailable = slot.Appointment is null;
 
                 return filter switch
                 {
-                    AvailabilitySlotFilterDto.Booked => hasActiveBooking,
+                    AvailabilitySlotFilterDto.Booked => isBooked,
 
                     AvailabilitySlotFilterDto.Available => isAvailable,
 
-                    AvailabilitySlotFilterDto.All => hasActiveBooking || isAvailable,
+                    AvailabilitySlotFilterDto.All => isBooked || isAvailable,
 
-                    _ => hasActiveBooking || isAvailable
+                    _ => isBooked || isAvailable
                 };
             });
 
@@ -211,13 +211,9 @@ namespace Services.DoctorServices
                 var startAt = slot.StartAt;
                 var endAt = slot.StartAt.Add(slot.Duration);
 
-                var hasActiveBooking =
+                var isBooked =
                     slot.Appointment is not null &&
-                    bookedStatuses.Contains(slot.Appointment.Status);
-
-                var appointmentStatus = hasActiveBooking
-                    ? slot.Appointment!.Status.ToString()
-                    : null;
+                    slot.Appointment.Status == AppointmentStatus.Confirmed;
 
                 return new DoctorAvailabilityOverviewDto
                 {
@@ -230,16 +226,18 @@ namespace Services.DoctorServices
 
                     VisitType = slot.Type.ToString(),
 
-                    BookingStatus = hasActiveBooking ? "Booked" : "Available",
-                    AppointmentStatus = appointmentStatus,
+                    BookingStatus = isBooked ? "Booked" : "Available",
 
-                    DisplayStatus = hasActiveBooking
-                        ? $"Booked ({appointmentStatus})"
+                    AppointmentStatus = isBooked
+                        ? AppointmentStatus.Confirmed.ToString()
+                        : null,
+
+                    DisplayStatus = isBooked
+                        ? "Booked"
                         : "Available"
                 };
             });
         }
-
 
 
         public async Task<IEnumerable<AvailabilitySlotDto>> GetMyAvailabilitySlotsAsync(string Email)
@@ -283,6 +281,7 @@ namespace Services.DoctorServices
 
             if (doctor is null)
                 throw new DoctorNotFoundException("Doctor not found.");
+            await CompleteExpiredConfirmedAppointmentsForDoctorAsync(doctor.Id);
             AppointmentStatus? domainStatus = null;
 
             if (status.HasValue)
@@ -412,7 +411,7 @@ namespace Services.DoctorServices
         }
 
 
-        public async Task<ServiceResponse> RequestRescheduleAppointmentAsync(string email,int appointmentId,RescheduleAppointmentDto dto)
+        public async Task<ServiceResponse> RequestRescheduleAppointmentAsync(string email, int appointmentId, RescheduleAppointmentDto dto)
         {
             if (string.IsNullOrWhiteSpace(email))
                 throw new UnauthorizedException();
@@ -512,7 +511,7 @@ namespace Services.DoctorServices
 
             if (doctor is null)
                 throw new DoctorNotFoundException("Doctor not found.");
-
+            await CompleteExpiredConfirmedAppointmentsForDoctorAsync(doctor.Id);
             var now = DateTime.Now;
             var monthStart = new DateTime(now.Year, now.Month, 1);
             var nextMonthStart = monthStart.AddMonths(1);
@@ -940,7 +939,7 @@ namespace Services.DoctorServices
         }
 
 
-        private static bool IsOverlapping(DateTime firstStart,TimeSpan firstDuration,DateTime secondStart,TimeSpan secondDuration)
+        private static bool IsOverlapping(DateTime firstStart, TimeSpan firstDuration, DateTime secondStart, TimeSpan secondDuration)
         {
             var firstEnd = firstStart.Add(firstDuration);
             var secondEnd = secondStart.Add(secondDuration);
@@ -948,6 +947,31 @@ namespace Services.DoctorServices
             return firstStart < secondEnd && secondStart < firstEnd;
         }
 
-        
+
+
+        private async Task CompleteExpiredConfirmedAppointmentsForDoctorAsync(int doctorId)
+        {
+            var appointmentRepo = _unitOfWork.GetRepository<Appointment>();
+
+            var appointments = await appointmentRepo.GetAllAsync(
+                new DoctorConfirmedAppointmentsSpecification(doctorId));
+
+            var now = DateTime.Now;
+
+            var expiredAppointments = appointments
+                .Where(a => a.AvailabilitySlot.StartAt.Add(a.AvailabilitySlot.Duration) <= now)
+                .ToList();
+
+            if (!expiredAppointments.Any())
+                return;
+
+            foreach (var appointment in expiredAppointments)
+            {
+                appointment.Status = AppointmentStatus.Completed;
+                appointmentRepo.Update(appointment);
+            }
+
+            await _unitOfWork.SaveChangesAsync();
+        }
     }
 }
