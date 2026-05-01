@@ -602,6 +602,62 @@ namespace Services.DoctorServices
                                                             : new ServiceResponse { Status = true, Message = "No changes were made." };
         }
 
+
+
+        public async Task<ServiceResponse> DeleteAvailabilitySlotsAsync(string email,DeleteAvailabilitySlotsDto dto)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+                throw new UnauthorizedException();
+
+            if (dto is null || dto.SlotIds is null || !dto.SlotIds.Any())
+                throw new BadRequestException("Please select at least one slot.");
+
+            var slotIds = dto.SlotIds
+                .Distinct()
+                .ToList();
+
+            var doctorRepo = _unitOfWork.GetRepository<Doctor>();
+            var slotRepo = _unitOfWork.GetRepository<AvailabilitySlot>();
+
+            var doctor = await doctorRepo.GetByIdAsync(
+                new DoctorDetailsSpecification(email));
+
+            if (doctor is null)
+                throw new DoctorNotFoundException("Doctor not found.");
+
+            var slots = await slotRepo.GetAllAsync(
+                new DoctorAvailabilitySlotsByIdsSpecification(doctor.Id, slotIds));
+
+            var slotsList = slots.ToList();
+
+            if (slotsList.Count != slotIds.Count)
+                throw new BadRequestException("Invalid selected slots.");
+
+            if (slotsList.Any(s => s.Appointment is not null))
+                throw new BadRequestException("Booked slots cannot be deleted.");
+
+            foreach (var slot in slotsList)
+            {
+                slotRepo.Remove(slot);
+            }
+
+            var result = await _unitOfWork.SaveChangesAsync();
+
+            return result > 0
+                ? new ServiceResponse
+                {
+                    Status = true,
+                    Message = $"{slotsList.Count} availability slot(s) deleted successfully."
+                }
+                : new ServiceResponse
+                {
+                    Status = false,
+                    Message = "No availability slots were deleted."
+                };
+        }
+
+
+
         public async Task<ServiceResponse> DeleteAvailabilitySlotAsync(string email, int slotId)
         {
             if (string.IsNullOrWhiteSpace(email))

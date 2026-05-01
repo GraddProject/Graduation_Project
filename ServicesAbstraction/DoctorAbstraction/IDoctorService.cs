@@ -48,6 +48,9 @@ namespace ServicesAbstraction.DoctorAbstraction
 
         public Task<ServiceResponse> UpdateAvailabilitySlotAsync(string Email, int SlotId, UpdateAvailabilitySlotDto updateAvailabilitySlot);
 
+
+
+        Task<ServiceResponse> DeleteAvailabilitySlotsAsync(string email, DeleteAvailabilitySlotsDto dto);
         public Task<ServiceResponse> DeleteAvailabilitySlotAsync(string email, int slotId);
 
 

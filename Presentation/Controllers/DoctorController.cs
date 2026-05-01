@@ -217,6 +217,19 @@ namespace Presentation.Controllers
             return Ok(result);
         }
 
+
+        [HttpDelete("DeleteAvailabilitySlots")]
+        public async Task<ActionResult<ServiceResponse>> DeleteAvailabilitySlots([FromBody] DeleteAvailabilitySlotsDto dto)
+        {
+            var email = User.FindFirstValue(ClaimTypes.Email);
+
+            var result = await _serviceManger.DoctorService
+                .DeleteAvailabilitySlotsAsync(email!, dto);
+
+            return Ok(result);
+        }
+
+
         [HttpDelete("DeleteAvailabilitySlot")]
         public async Task<ActionResult<ServiceResponse>> DeleteAvailabilitySlot(int SlotId)
         {
