@@ -13,14 +13,14 @@ namespace Persistence.Data.Configuration
     {
         public void Configure(EntityTypeBuilder<MedicalHistory> builder)
         {
-            builder.HasOne(M=>M.Patient)
-                .WithMany(P=>P.MedicalHistory)
-                .HasForeignKey(M=>M.PatientId) 
+            builder.HasOne(M => M.Patient)
+                .WithMany(P => P.MedicalHistory)
+                .HasForeignKey(M => M.PatientId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            builder.HasOne(M=>M.CreatedByDoctor)
-                .WithMany(D=>D.CreatedMedicalHistories)
-                .HasForeignKey(M=>M.CreatedByDoctorId)
+            builder.HasOne(M => M.CreatedByDoctor)
+                .WithMany(D => D.CreatedMedicalHistories)
+                .HasForeignKey(M => M.CreatedByDoctorId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             builder.Property(m => m.Diagnosis)
@@ -34,6 +34,17 @@ namespace Persistence.Data.Configuration
 
             builder.Property(m => m.CreatedAt)
                    .HasDefaultValueSql("GETDATE()");
+
+
+
+            builder.HasOne(m => m.PredictionRecord)
+                  .WithOne(p => p.MedicalHistory)
+                  .HasForeignKey<MedicalHistory>(m => m.PredictionRecordId)
+                  .OnDelete(DeleteBehavior.NoAction);
+
+            builder.HasIndex(m => m.PredictionRecordId)
+                  .IsUnique()
+                  .HasFilter("[PredictionRecordId] IS NOT NULL");
         }
     }
 }

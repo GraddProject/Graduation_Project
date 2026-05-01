@@ -8,6 +8,7 @@ using Shared.DTos.DoctorDTos;
 using Shared.DTos.MedicalHistoryDTos;
 using Shared.DTos.MedicalTestDTos;
 using Shared.DTos.MlDTos;
+using Shared.DTos.PredictionDTos;
 using Shared.ErrorModels;
 using System.Security.Claims;
 
@@ -20,6 +21,41 @@ namespace Presentation.Controllers
         public async Task<ActionResult<PredictionResponseDto>> Predict([FromBody] PredictionRequestDto request)
         {
             var result = await _serviceManger.ModelPredictionService.PredictAsync(request);
+            return Ok(result);
+        }
+
+
+
+
+        [HttpPost("GDM")]
+        public async Task<ActionResult<PredictionResponseDto>> CreateGdmPrediction([FromBody] CreateGdmPredictionDto request)
+        {
+            var email = User.FindFirstValue(ClaimTypes.Email);
+
+            var result = await _serviceManger.ModelPredictionService.CreateGdmPredictionAsync(email!, request);
+
+            return Ok(result);
+        }
+
+        [HttpGet("PredictionsList")]
+        public async Task<ActionResult<IEnumerable<PredictionInsightDto>>> GetDoctorPredictionInsights()
+        {
+            var email = User.FindFirstValue(ClaimTypes.Email);
+
+            var result = await _serviceManger.ModelPredictionService.GetDoctorPredictionInsightsAsync(email!);
+
+            return Ok(result);
+        }
+
+
+        [HttpGet("predictions/{predictionRecordId}")]
+        public async Task<ActionResult<PredictionDetailsDto>> GetPredictionDetails(int predictionRecordId)
+        {
+            var email = User.FindFirstValue(ClaimTypes.Email);
+
+            var result = await _serviceManger.ModelPredictionService
+                .GetPredictionDetailsAsync(email!, predictionRecordId);
+
             return Ok(result);
         }
 

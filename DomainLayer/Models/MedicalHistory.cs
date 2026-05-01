@@ -16,6 +16,12 @@ namespace DomainLayer.Models
         public int CreatedByDoctorId { get; set; }
         public Doctor CreatedByDoctor { get; set; } = default!;
 
+
+        public int? PredictionRecordId { get; set; }
+
+        public PredictionRecord? PredictionRecord { get; set; }
+
+
         public string Diagnosis { get; set; } = default!;
         public string? VitalSigns { get; set; }
         public string? Notes { get; set; }

@@ -1,4 +1,5 @@
 ﻿using Shared.DTos.MlDTos;
+using Shared.DTos.PredictionDTos;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,5 +11,12 @@ namespace ServicesAbstraction.ModelAbstraction
     public interface IModelPredictionService
     {
         Task<PredictionResponseDto> PredictAsync(PredictionRequestDto request);
+
+        Task<SavedPredictionResponseDto> CreateGdmPredictionAsync(string email,CreateGdmPredictionDto request);
+
+        Task<IEnumerable<PredictionInsightDto>> GetDoctorPredictionInsightsAsync(string email);
+
+        Task<PredictionDetailsDto> GetPredictionDetailsAsync(string email, int predictionRecordId);
+
     }
 }

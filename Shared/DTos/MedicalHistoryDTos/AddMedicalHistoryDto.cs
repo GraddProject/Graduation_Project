@@ -8,6 +8,8 @@ namespace Shared.DTos.MedicalHistoryDTos
 {
     public class AddMedicalHistoryDto
     {
+
+        public int? PredictionRecordId { get; set; }
         public string Diagnosis { get; set; } 
         public string VitalSigns { get; set; }
         public string Notes { get; set; }

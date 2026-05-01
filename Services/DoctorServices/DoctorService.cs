@@ -7,6 +7,7 @@ using Services.Specifications.DoctorSpecifications;
 using Services.Specifications.MedicalHistorySpecification;
 using Services.Specifications.MedicalTestSpecifications;
 using Services.Specifications.PatientSpecifications;
+using Services.Specifications.PredictionSpecifications;
 using Services.Specifications.PreScriptionSpecifications;
 using ServicesAbstraction.Common;
 using ServicesAbstraction.DoctorAbstraction;
@@ -705,11 +706,66 @@ namespace Services.DoctorServices
             return _mapper.Map<IEnumerable<DoctorPatientDto>>(patients);
         }
 
-        public async Task<MedicalHistoryDetailsDto> AddMedicalHistoryAsync(string Email, int PatientId, AddMedicalHistoryDto dto)
+        //public async Task<MedicalHistoryDetailsDto> AddMedicalHistoryAsync(string Email, int PatientId, AddMedicalHistoryDto dto)
+        //{
+        //    if (string.IsNullOrWhiteSpace(Email))
+        //        throw new UnauthorizedException();
+
+
+        //    if (dto is null)
+        //        throw new BadRequestException("Medical history data is required.");
+
+        //    var DRepo = _unitOfWork.GetRepository<Doctor>();
+        //    var PRepo = _unitOfWork.GetRepository<Patient>();
+        //    var MRepo = _unitOfWork.GetRepository<MedicalHistory>();
+
+        //    var DocotrSpec = new DoctorDetailsSpecification(Email);
+        //    var doctor = await DRepo.GetByIdAsync(DocotrSpec);
+        //    if (doctor is null)
+        //        throw new DoctorNotFoundException("Doctor not found.");
+
+
+        //    var PatientSpec = new PatientsBelongToSpecifcDoctor(PatientId, doctor.Id);
+        //    var patient = await PRepo.GetByIdAsync(PatientSpec);
+
+        //    if (patient is null)
+        //        throw PatientNotFoundException.Belong("Patient not found or does not belong to this doctor.");
+
+        //    //var medicalHistory = new MedicalHistory
+        //    //{
+        //    //    PatientId = PatientId,
+        //    //    CreatedByDoctorId = doctor.Id,
+        //    //    Diagnosis = dto.Diagnosis,
+        //    //    VitalSigns = dto.VitalSigns,
+        //    //    Notes = dto.Notes,
+        //    //    CreatedAt = DateTime.UtcNow,
+        //    //    PreScriptions = dto.PreScriptions?
+        //    //        .Where(p => !string.IsNullOrWhiteSpace(p.MedicationName))
+        //    //        .Select(p => new PreScription
+        //    //        {
+        //    //            MedicationName = p.MedicationName,
+        //    //            Dosage = p.Dosage,
+        //    //            Duration = p.Duration,
+        //    //            Instructions = p.Instructions,
+        //    //            CreatedAt = DateTime.UtcNow
+        //    //        }).ToList() ?? new List<PreScription>()
+        //    //};
+        //    var medicalHistory = _mapper.Map<MedicalHistory>(dto);
+        //    medicalHistory.PatientId = PatientId;
+        //    medicalHistory.CreatedByDoctorId = doctor.Id;
+
+        //    await MRepo.AddAsync(medicalHistory);
+
+        //    return await _unitOfWork.SaveChangesAsync() > 0 ? _mapper.Map<MedicalHistoryDetailsDto>(medicalHistory)
+        //                                                    : throw new BadRequestException("Failed to add medical history.");
+        //}
+
+
+
+        public async Task<MedicalHistoryDetailsDto> AddMedicalHistoryAsync(string Email,int PatientId,AddMedicalHistoryDto dto)
         {
             if (string.IsNullOrWhiteSpace(Email))
                 throw new UnauthorizedException();
-
 
             if (dto is null)
                 throw new BadRequestException("Medical history data is required.");
@@ -717,12 +773,13 @@ namespace Services.DoctorServices
             var DRepo = _unitOfWork.GetRepository<Doctor>();
             var PRepo = _unitOfWork.GetRepository<Patient>();
             var MRepo = _unitOfWork.GetRepository<MedicalHistory>();
+            var predictionRepo = _unitOfWork.GetRepository<PredictionRecord>();
 
             var DocotrSpec = new DoctorDetailsSpecification(Email);
             var doctor = await DRepo.GetByIdAsync(DocotrSpec);
+
             if (doctor is null)
                 throw new DoctorNotFoundException("Doctor not found.");
-
 
             var PatientSpec = new PatientsBelongToSpecifcDoctor(PatientId, doctor.Id);
             var patient = await PRepo.GetByIdAsync(PatientSpec);
@@ -730,34 +787,41 @@ namespace Services.DoctorServices
             if (patient is null)
                 throw PatientNotFoundException.Belong("Patient not found or does not belong to this doctor.");
 
-            //var medicalHistory = new MedicalHistory
-            //{
-            //    PatientId = PatientId,
-            //    CreatedByDoctorId = doctor.Id,
-            //    Diagnosis = dto.Diagnosis,
-            //    VitalSigns = dto.VitalSigns,
-            //    Notes = dto.Notes,
-            //    CreatedAt = DateTime.UtcNow,
-            //    PreScriptions = dto.PreScriptions?
-            //        .Where(p => !string.IsNullOrWhiteSpace(p.MedicationName))
-            //        .Select(p => new PreScription
-            //        {
-            //            MedicationName = p.MedicationName,
-            //            Dosage = p.Dosage,
-            //            Duration = p.Duration,
-            //            Instructions = p.Instructions,
-            //            CreatedAt = DateTime.UtcNow
-            //        }).ToList() ?? new List<PreScription>()
-            //};
+            int? predictionRecordId = null;
+
+            if (dto.PredictionRecordId.HasValue)
+            {
+                if (dto.PredictionRecordId.Value <= 0)
+                    throw new BadRequestException("Prediction record id is invalid.");
+
+                var prediction = await predictionRepo.GetByIdAsync(
+                    new PredictionRecordForMedicalHistorySpecification(
+                        dto.PredictionRecordId.Value,
+                        doctor.Id,
+                        patient.Id));
+
+                if (prediction is null)
+                    throw new BadRequestException("Prediction record not found or does not belong to this patient.");
+
+                if (prediction.MedicalHistory is not null)
+                    throw new BadRequestException("This prediction already has a medical history.");
+
+                predictionRecordId = prediction.Id;
+            }
+
             var medicalHistory = _mapper.Map<MedicalHistory>(dto);
+
             medicalHistory.PatientId = PatientId;
             medicalHistory.CreatedByDoctorId = doctor.Id;
+            medicalHistory.PredictionRecordId = predictionRecordId;
 
             await MRepo.AddAsync(medicalHistory);
 
-            return await _unitOfWork.SaveChangesAsync() > 0 ? _mapper.Map<MedicalHistoryDetailsDto>(medicalHistory)
-                                                            : throw new BadRequestException("Failed to add medical history.");
+            return await _unitOfWork.SaveChangesAsync() > 0
+                ? _mapper.Map<MedicalHistoryDetailsDto>(medicalHistory)
+                : throw new BadRequestException("Failed to add medical history.");
         }
+
 
         public async Task<MedicalHistoryDetailsDto> UpdateMedicalHistoryAsync(string Email, int PatientId, int MedicalHistoryId, UpdateMedicalHistoryDto dto)
         {

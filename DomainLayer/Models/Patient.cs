@@ -31,5 +31,6 @@ namespace DomainLayer.Models
 
         public ICollection<MedicalTest>? MedicalTests { get; set; } = [];
 
+        public ICollection<PredictionRecord>? PredictionRecords { get; set; } = [];
     }
 }

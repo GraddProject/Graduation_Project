@@ -27,5 +27,7 @@ namespace DomainLayer.Models
 
         public ICollection<Appointment>? Appointments { get; set; } = [];
 
+        public ICollection<PredictionRecord>? PredictionRecords { get; set; } = [];
+
     }
 }

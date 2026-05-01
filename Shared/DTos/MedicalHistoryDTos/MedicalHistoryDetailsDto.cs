@@ -11,9 +11,10 @@ namespace Shared.DTos.MedicalHistoryDTos
         public int Id { get; set; }
         public int PatientId { get; set; }
         //public int CreatedByDoctorId { get; set; }
+        public int? PredictionRecordId { get; set; }
         public string Diagnosis { get; set; }
         public string VitalSigns { get; set; }
-        public string Notes { get; set; } 
+        public string Notes { get; set; }
         public DateTime CreatedAt { get; set; }
 
         public ICollection<PreScriptionDto> PreScriptions { get; set; } = [];
