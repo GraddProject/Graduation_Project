@@ -17,6 +17,8 @@ namespace ServicesAbstraction.DoctorAbstraction
     {
         public Task<IEnumerable<DoctorPatientDto>> GetAllPatientsAsync(string Email);
 
+        Task<DoctorPatientDto> GetPatientByIdAsync(string Email,int patientId);
+
         public Task<IEnumerable<MedicalHistoryDetailsDto>> GetPatientMedicalHistoriesAsync(string Email, int PatientId);
         public Task<MedicalHistoryDetailsDto> GetPatientMedicalHistoryByIdAsync(string Email, int PatientId, int MedicalHistoryId);
         public Task<MedicalHistoryDetailsDto> AddMedicalHistoryAsync(string Email, int PatientId, AddMedicalHistoryDto addMedicaldto);

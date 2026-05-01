@@ -166,9 +166,6 @@ namespace Services.DoctorServices
             return await _unitOfWork.SaveChangesAsync() > 0;
         }
 
-
-
-
         public async Task<IEnumerable<DoctorAvailabilityOverviewDto>> GetAvailabilityOverviewAsync(string email, AvailabilitySlotFilterDto filter = AvailabilitySlotFilterDto.All)
         {
             if (string.IsNullOrWhiteSpace(email))
@@ -239,7 +236,6 @@ namespace Services.DoctorServices
                 };
             });
         }
-
 
         public async Task<IEnumerable<AvailabilitySlotDto>> GetMyAvailabilitySlotsAsync(string Email)
         {
@@ -605,7 +601,7 @@ namespace Services.DoctorServices
 
 
 
-        public async Task<ServiceResponse> DeleteAvailabilitySlotsAsync(string email,DeleteAvailabilitySlotsDto dto)
+        public async Task<ServiceResponse> DeleteAvailabilitySlotsAsync(string email, DeleteAvailabilitySlotsDto dto)
         {
             if (string.IsNullOrWhiteSpace(email))
                 throw new UnauthorizedException();
@@ -706,6 +702,34 @@ namespace Services.DoctorServices
             return _mapper.Map<IEnumerable<DoctorPatientDto>>(patients);
         }
 
+
+
+        public async Task<DoctorPatientDto> GetPatientByIdAsync(string Email, int patientId)
+        {
+            if (string.IsNullOrWhiteSpace(Email))
+                throw new UnauthorizedException();
+
+            var DRepo = _unitOfWork.GetRepository<Doctor>();
+            var Prepo = _unitOfWork.GetRepository<Patient>();
+
+            var spec = new DoctorDetailsSpecification(Email);
+            var doctor = await DRepo.GetByIdAsync(spec);
+            if (doctor == null)
+                throw new DoctorNotFoundException("Doctor not found.");
+
+            var Pspec = new PatientsBelongToSpecifcDoctor(patientId, doctor.Id);
+            var patient = await Prepo.GetByIdAsync(Pspec);
+
+            if (patient is null)
+                throw PatientNotFoundException.Belong("Patient not found or does not belong to this doctor.");
+
+            return _mapper.Map<DoctorPatientDto>(patient);
+        }
+
+
+
+
+
         //public async Task<MedicalHistoryDetailsDto> AddMedicalHistoryAsync(string Email, int PatientId, AddMedicalHistoryDto dto)
         //{
         //    if (string.IsNullOrWhiteSpace(Email))
@@ -762,7 +786,7 @@ namespace Services.DoctorServices
 
 
 
-        public async Task<MedicalHistoryDetailsDto> AddMedicalHistoryAsync(string Email,int PatientId,AddMedicalHistoryDto dto)
+        public async Task<MedicalHistoryDetailsDto> AddMedicalHistoryAsync(string Email, int PatientId, AddMedicalHistoryDto dto)
         {
             if (string.IsNullOrWhiteSpace(Email))
                 throw new UnauthorizedException();
@@ -1093,5 +1117,7 @@ namespace Services.DoctorServices
 
             await _unitOfWork.SaveChangesAsync();
         }
+
+
     }
 }

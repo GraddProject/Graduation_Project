@@ -71,6 +71,23 @@ namespace Presentation.Controllers
 
             return Ok(result);
         }
+
+
+
+        [HttpGet("GetPatientById")]
+        public async Task<ActionResult<DoctorPatientDto>> GetMyPatient(int patientId)
+        {
+            var email = User.FindFirstValue(ClaimTypes.Email);
+
+
+            var result = await _serviceManger.DoctorService.GetPatientByIdAsync(email,patientId);
+
+            return Ok(result);
+        }
+
+
+
+
         [HttpPost("AddMedicalHistory")]
         public async Task<ActionResult<MedicalHistoryDetailsDto>> AddMedicalHistory(int patientId, AddMedicalHistoryDto dto)
         {
