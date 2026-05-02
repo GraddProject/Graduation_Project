@@ -38,7 +38,7 @@ namespace ServicesAbstraction.DoctorAbstraction
 
         Task<IEnumerable<DoctorAppointmentDto>> GetDoctorAppointmentsAsync(string Email, AppointmentStatusDto? status = null);
 
-        Task<ServiceResponse> ConfirmAppointmentAsync(string email, int appointmentId);
+        //Task<ServiceResponse> ConfirmAppointmentAsync(string email, int appointmentId);
 
         Task<ServiceResponse> CancelAppointmentAsync(string email, int appointmentId);
 

@@ -211,7 +211,10 @@ namespace Services.DoctorServices
 
                 var isBooked =
                     slot.Appointment is not null &&
-                    slot.Appointment.Status == AppointmentStatus.Confirmed;
+                    (
+                    slot.Appointment.Status == AppointmentStatus.Confirmed ||
+                    slot.Appointment.Status == AppointmentStatus.ReschedulePending
+                     );
 
                 return new DoctorAvailabilityOverviewDto
                 {
@@ -285,7 +288,7 @@ namespace Services.DoctorServices
             {
                 domainStatus = status.Value switch
                 {
-                    AppointmentStatusDto.Pending => AppointmentStatus.Pending,
+                    //AppointmentStatusDto.Pending => AppointmentStatus.Pending,
                     AppointmentStatusDto.Confirmed => AppointmentStatus.Confirmed,
                     AppointmentStatusDto.Canceled => AppointmentStatus.Canceled,
                     AppointmentStatusDto.Completed => AppointmentStatus.Completed,
@@ -317,50 +320,50 @@ namespace Services.DoctorServices
             });
         }
 
-        public async Task<ServiceResponse> ConfirmAppointmentAsync(string email, int appointmentId)
-        {
-            if (string.IsNullOrWhiteSpace(email))
-                throw new UnauthorizedException();
+        //public async Task<ServiceResponse> ConfirmAppointmentAsync(string email, int appointmentId)
+        //{
+        //    if (string.IsNullOrWhiteSpace(email))
+        //        throw new UnauthorizedException();
 
-            var doctorRepo = _unitOfWork.GetRepository<Doctor>();
-            var appointmentRepo = _unitOfWork.GetRepository<Appointment>();
+        //    var doctorRepo = _unitOfWork.GetRepository<Doctor>();
+        //    var appointmentRepo = _unitOfWork.GetRepository<Appointment>();
 
-            var doctor = await doctorRepo.GetByIdAsync(new DoctorDetailsSpecification(email));
+        //    var doctor = await doctorRepo.GetByIdAsync(new DoctorDetailsSpecification(email));
 
-            if (doctor is null)
-                throw new DoctorNotFoundException("Doctor not found.");
+        //    if (doctor is null)
+        //        throw new DoctorNotFoundException("Doctor not found.");
 
-            var appointment = await appointmentRepo.GetByIdAsync(
-                new DoctorAppointmentByIdSpecification(doctor.Id, appointmentId));
+        //    var appointment = await appointmentRepo.GetByIdAsync(
+        //        new DoctorAppointmentByIdSpecification(doctor.Id, appointmentId));
 
-            if (appointment is null)
-                throw new BadRequestException("Appointment not found or does not belong to this doctor.");
+        //    if (appointment is null)
+        //        throw new BadRequestException("Appointment not found or does not belong to this doctor.");
 
-            if (appointment.Status != AppointmentStatus.Pending)
-                throw new BadRequestException("Only pending appointments can be confirmed.");
+        //    if (appointment.Status != AppointmentStatus.Pending)
+        //        throw new BadRequestException("Only pending appointments can be confirmed.");
 
-            if (appointment.AvailabilitySlot.StartAt <= DateTime.Now)
-                throw new BadRequestException("Cannot confirm an appointment in the past.");
+        //    if (appointment.AvailabilitySlot.StartAt <= DateTime.Now)
+        //        throw new BadRequestException("Cannot confirm an appointment in the past.");
 
-            appointment.Status = AppointmentStatus.Confirmed;
+        //    appointment.Status = AppointmentStatus.Confirmed;
 
-            appointmentRepo.Update(appointment);
+        //    appointmentRepo.Update(appointment);
 
-            await _unitOfWork.SaveChangesAsync();
+        //    await _unitOfWork.SaveChangesAsync();
 
-            await _notificationService.CreateAndSendAsync(
-                appointment.Patient.UserId,
-                "Appointment Confirmed",
-                $"Your appointment at {appointment.AvailabilitySlot.StartAt:dd/MM/yyyy hh:mm tt} has been confirmed.",
-                NotificationTypeDto.AppointmentConfirmed,
-                appointment.Id);
+        //    await _notificationService.CreateAndSendAsync(
+        //        appointment.Patient.UserId,
+        //        "Appointment Confirmed",
+        //        $"Your appointment at {appointment.AvailabilitySlot.StartAt:dd/MM/yyyy hh:mm tt} has been confirmed.",
+        //        NotificationTypeDto.AppointmentConfirmed,
+        //        appointment.Id);
 
-            return new ServiceResponse
-            {
-                Status = true,
-                Message = "Appointment confirmed successfully."
-            };
-        }
+        //    return new ServiceResponse
+        //    {
+        //        Status = true,
+        //        Message = "Appointment confirmed successfully."
+        //    };
+        //}
 
         public async Task<ServiceResponse> CancelAppointmentAsync(string email, int appointmentId)
         {
@@ -450,9 +453,8 @@ namespace Services.DoctorServices
             if (appointment.AvailabilitySlot is null)
                 throw new BadRequestException(new List<string> { "This appointment has no slot to reschedule." });
 
-            if (appointment.Status != AppointmentStatus.Pending &&
-                appointment.Status != AppointmentStatus.Confirmed)
-                throw new BadRequestException(new List<string> { "Only pending or confirmed appointments can be rescheduled." });
+            if (appointment.Status != AppointmentStatus.Confirmed)
+                throw new BadRequestException(new List<string> { "Only confirmed appointments can be rescheduled." });
 
             var newDuration = TimeSpan.FromMinutes(dto.DurationMinutes);
             var currentSlot = appointment.AvailabilitySlot;
@@ -538,8 +540,8 @@ namespace Services.DoctorServices
                     a.AvailabilitySlot.StartAt < nextMonthStart &&
                     a.Status == AppointmentStatus.Completed),
 
-                Pending = appointmentsList.Count(a =>
-                    a.Status == AppointmentStatus.Pending),
+                //Pending = appointmentsList.Count(a =>
+                //    a.Status == AppointmentStatus.Pending),
 
                 ReschedulePending = appointmentsList.Count(a =>
                     a.Status == AppointmentStatus.ReschedulePending)

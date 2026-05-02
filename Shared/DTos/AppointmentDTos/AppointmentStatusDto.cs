@@ -8,7 +8,7 @@ namespace Shared.DTos.AppointmentDTos
 {
     public enum AppointmentStatusDto
     {
-        Pending = 0,
+        //Pending = 0,
         Confirmed = 1,
         Canceled = 2,
         ReschedulePending = 3,

@@ -8,7 +8,7 @@ namespace DomainLayer.Models
 {
     public enum AppointmentStatus
     {
-        Pending = 0,
+        Pending = 0, // Legacy only - don't use it anymore
         Confirmed = 1,
         Canceled = 2,
         ReschedulePending = 3,

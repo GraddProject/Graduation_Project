@@ -8,11 +8,12 @@ namespace DomainLayer.Models
 {
     public enum NotificationType
     {
-        AppointmentRequested = 0,
+        AppointmentRequested = 0, // Legacy only
         AppointmentConfirmed = 1,
         AppointmentRescheduled = 2,
         AppointmentRescheduleAccepted = 3,
         AppointmentRescheduleRejected = 4,
-        AppointmentCanceled = 5
+        AppointmentCanceled = 5,
+        AppointmentBooked = 6
     }
 }

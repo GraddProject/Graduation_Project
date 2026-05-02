@@ -90,7 +90,7 @@ namespace Services.PatientServices
             {
                 domainStatus = status.Value switch
                 {
-                    AppointmentStatusDto.Pending => AppointmentStatus.Pending,
+                    //AppointmentStatusDto.Pending => AppointmentStatus.Pending,
                     AppointmentStatusDto.Confirmed => AppointmentStatus.Confirmed,
                     AppointmentStatusDto.Canceled => AppointmentStatus.Canceled,
                     AppointmentStatusDto.Completed => AppointmentStatus.Completed,
@@ -169,7 +169,7 @@ namespace Services.PatientServices
                 PatientId = patient.Id,
                 DoctorId = slot.DoctorId,
                 AvailabilitySlotId = slot.Id,
-                Status = AppointmentStatus.Pending,
+                Status = AppointmentStatus.Confirmed,
                 CreatedAt = DateTime.Now
             };
 
@@ -178,17 +178,17 @@ namespace Services.PatientServices
             await _unitOfWork.SaveChangesAsync();
 
             await _notificationService.CreateAndSendAsync(
-                 slot.Doctor.UserId,
-                 "New Appointment Request",
-                 $"{patient.User.DisplayName} requested {sessionName} at {slot.StartAt:dd/MM/yyyy hh:mm tt}.",
-                 NotificationTypeDto.AppointmentRequested,
-                 appointment.Id);
+                  slot.Doctor.UserId,
+                  "New Appointment Booked",
+                  $"{patient.User.DisplayName} booked appointment at {slot.StartAt:dd/MM/yyyy hh:mm tt}.",
+                  NotificationTypeDto.AppointmentBooked,
+                  appointment.Id);
 
 
             return new ServiceResponse
             {
                 Status = true,
-                Message = "Appointment request sent successfully."
+                Message = "Appointment booked successfully."
             };
         }
 
@@ -217,12 +217,11 @@ namespace Services.PatientServices
             "Appointment not found or does not belong to this patient."
         });
 
-            if (appointment.Status != AppointmentStatus.Pending &&
-                appointment.Status != AppointmentStatus.Confirmed)
+            if (appointment.Status != AppointmentStatus.Confirmed)
             {
                 throw new BadRequestException(new List<string>
         {
-            "Only pending or confirmed appointments can be canceled."
+            "Only confirmed appointments can be canceled."
         });
             }
 
@@ -246,7 +245,7 @@ namespace Services.PatientServices
             await _notificationService.CreateAndSendAsync(
                 doctorUserId,
                 "Appointment Canceled By Patient",
-                $"{patientName} canceled {sessionName} at {appointmentTime:dd/MM/yyyy hh:mm tt}.",
+                $"{patientName} canceled appointment at {appointmentTime:dd/MM/yyyy hh:mm tt}.",
                 NotificationTypeDto.AppointmentCanceled,
                 null);
 

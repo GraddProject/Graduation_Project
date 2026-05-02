@@ -20,7 +20,7 @@ namespace DomainLayer.Models
         public int AvailabilitySlotId { get; set; }
         public AvailabilitySlot AvailabilitySlot { get; set; } = default!;
 
-        public AppointmentStatus Status { get; set; } = AppointmentStatus.Pending;
+        public AppointmentStatus Status { get; set; } = AppointmentStatus.Confirmed;
 
         public DateTime CreatedAt { get; set; }
     }

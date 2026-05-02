@@ -216,15 +216,15 @@ namespace Presentation.Controllers
         }
 
 
-        [HttpPut("ConfirmAppointment")]
-        public async Task<ActionResult<ServiceResponse>> ConfirmAppointment(int appointmentId)
-        {
-            var email = User.FindFirstValue(ClaimTypes.Email);
+        //[HttpPut("ConfirmAppointment")]
+        //public async Task<ActionResult<ServiceResponse>> ConfirmAppointment(int appointmentId)
+        //{
+        //    var email = User.FindFirstValue(ClaimTypes.Email);
 
-            var result = await _serviceManger.DoctorService.ConfirmAppointmentAsync(email!, appointmentId);
+        //    var result = await _serviceManger.DoctorService.ConfirmAppointmentAsync(email!, appointmentId);
 
-            return Ok(result);
-        }
+        //    return Ok(result);
+        //}
 
 
         [HttpPut("CancelAppointment")]

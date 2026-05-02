@@ -14,7 +14,7 @@ namespace Shared.DTos.AppointmentDTos
 
         public int Completed { get; set; }
 
-        public int Pending { get; set; }
+        //public int Pending { get; set; }
         public int ReschedulePending { get; set; }
 
     }
