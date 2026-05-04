@@ -319,5 +319,18 @@ namespace Presentation.Controllers
 
             return File(result.Content, result.ContentType, result.FileName);
         }
+
+
+
+        [HttpGet("DashboardAppointmentAndAvailabiltyOverviewOnThisMonth")]
+        public async Task<ActionResult<DoctorDashboardOverviewDto>> GetDashboardOverview()
+        {
+            var email = User.FindFirstValue(ClaimTypes.Email);
+
+            var result = await _serviceManger.DoctorService
+                .GetDoctorDashboardOverviewAsync(email!);
+
+            return Ok(result);
+        }
     }
 }

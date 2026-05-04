@@ -59,5 +59,8 @@ namespace ServicesAbstraction.DoctorAbstraction
 
         Task<IEnumerable<MedicalTestListDto>> GetPatientMedicalTestsAsync(string Email, int PatientId);
         Task<MedicalTestFileDto> ViewPatientMedicalTestAsync(string Email, int PatientId, int medicalTestId);
+
+
+        Task<DoctorDashboardOverviewDto> GetDoctorDashboardOverviewAsync(string Email);
     }
 }

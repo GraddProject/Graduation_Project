@@ -1085,6 +1085,110 @@ namespace Services.DoctorServices
         }
 
 
+
+        public async Task<DoctorDashboardOverviewDto> GetDoctorDashboardOverviewAsync(string Email)
+        {
+            if (string.IsNullOrWhiteSpace(Email))
+                throw new UnauthorizedException();
+
+            var DRepo = _unitOfWork.GetRepository<Doctor>();
+            var appointmentRepo = _unitOfWork.GetRepository<Appointment>();
+            var SlotRepo = _unitOfWork.GetRepository<AvailabilitySlot>();
+
+            var doctor = await DRepo.GetByIdAsync(new DoctorDetailsSpecification(Email));
+
+            if (doctor is null)
+                throw new DoctorNotFoundException("Doctor not found.");
+
+            await CompleteExpiredConfirmedAppointmentsForDoctorAsync(doctor.Id);
+
+            var now = DateTime.Now;
+            var monthStart = new DateTime(now.Year, now.Month, 1);
+            var nextMonthStart = monthStart.AddMonths(1);
+
+            var appointments = await appointmentRepo.GetAllAsync(
+                new DoctorAppointmentsSummarySpecification(doctor.Id));
+
+            var monthlyAppointments = appointments
+                .Where(a =>
+                    a.AvailabilitySlot is not null &&
+                    a.AvailabilitySlot.StartAt >= monthStart &&
+                    a.AvailabilitySlot.StartAt < nextMonthStart)
+                .ToList();
+
+            var confirmedCount = monthlyAppointments.Count(a =>
+                a.Status == AppointmentStatus.Confirmed ||
+                a.Status == AppointmentStatus.ReschedulePending);
+
+            var completedCount = monthlyAppointments.Count(a =>
+                a.Status == AppointmentStatus.Completed);
+
+            var canceledCount = monthlyAppointments.Count(a =>
+                a.Status == AppointmentStatus.Canceled);
+
+            var totalAppointments = confirmedCount + completedCount + canceledCount;
+
+            var slots = await SlotRepo.GetAllAsync(new DoctorAvailabilitySlotsSpecification(doctor.Id));
+
+            var slotsList = slots
+                .Where(s =>
+                    s.StartAt >= monthStart &&
+                    s.StartAt < nextMonthStart)
+                .ToList();
+
+            var bookedSlots = slotsList
+                .Where(s =>
+                    s.Appointment is not null &&
+                    (
+                        s.Appointment.Status == AppointmentStatus.Confirmed ||
+                        s.Appointment.Status == AppointmentStatus.ReschedulePending
+                    ))
+                .ToList();
+
+            var availableSlots = slotsList
+                .Where(s => s.Appointment is null)
+                .ToList();
+
+            var totalSlots = bookedSlots.Count + availableSlots.Count;
+            return new DoctorDashboardOverviewDto
+            {
+                AppointmentOverview = new DoctorAppointmentOverviewDto
+                {
+                    Confirmed = new DoctorDashboardStatusDto
+                    {
+                        Count = confirmedCount,
+                        Percentage = CalculatePercentage(confirmedCount, totalAppointments)
+                    },
+
+                    Completed = new DoctorDashboardStatusDto
+                    {
+                        Count = completedCount,
+                        Percentage = CalculatePercentage(completedCount, totalAppointments)
+                    },
+
+                    Canceled = new DoctorDashboardStatusDto
+                    {
+                        Count = canceledCount,
+                        Percentage = CalculatePercentage(canceledCount, totalAppointments)
+                    }
+                },
+
+                Availability = new DoctorAvailabilityDashboardDto
+                {
+                    BookedPercentage = CalculatePercentage(bookedSlots.Count, totalSlots),
+
+                    BookedSlots = bookedSlots.Count,
+                    AvailableSlots = availableSlots.Count,
+
+                    OnlineBookedSlots = bookedSlots.Count(s => s.Type == AppointmentType.Online),
+                    OfflineBookedSlots = bookedSlots.Count(s => s.Type == AppointmentType.Offline)
+                }
+            };
+        }
+
+
+
+
         private static bool IsOverlapping(DateTime firstStart, TimeSpan firstDuration, DateTime secondStart, TimeSpan secondDuration)
         {
             var firstEnd = firstStart.Add(firstDuration);
@@ -1120,6 +1224,12 @@ namespace Services.DoctorServices
             await _unitOfWork.SaveChangesAsync();
         }
 
+        private static int CalculatePercentage(int value, int total)
+        {
+            if (total == 0)
+                return 0;
 
+            return (int)Math.Round((value * 100.0) / total);
+        }
     }
 }
