@@ -18,6 +18,23 @@ namespace Presentation.Controllers
     [Authorize(Roles = "Patient")]
     public class PatientController(IServiceManger _serviceManger) : ApiBaseController
     {
+
+        [HttpGet("debug-time")]
+        public IActionResult DebugTime()
+        {
+            return Ok(new
+            {
+                ServerNow = DateTime.Now,
+                ServerUtcNow = DateTime.UtcNow,
+                LocalTimeZone = TimeZoneInfo.Local.Id,
+                LocalOffset = TimeZoneInfo.Local.GetUtcOffset(DateTime.Now).ToString()
+            });
+        }
+
+
+
+
+
         [HttpPut("CompleteMedicalProfile")]
         public async Task<ActionResult<bool>> CompleteProfile(CompleteMedicalProfileDto completeMedicalProfileDto)
         {
