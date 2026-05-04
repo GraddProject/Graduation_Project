@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Services.Specifications.DoctorSpecifications
+namespace Services.Specifications.PatientSpecifications
 {
     class DoctorAvailabilitySlotsSpecification : BaseSpecifications<AvailabilitySlot>
     {

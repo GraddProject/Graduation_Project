@@ -5,7 +5,7 @@ using DomainLayer.IdentityModule;
 using DomainLayer.Models;
 using Microsoft.AspNetCore.Identity;
 using Services.Specifications.AppointmentSpecifications;
-using Services.Specifications.DoctorSpecifications;
+using Services.Specifications.PatientSpecifications;
 using Services.Specifications.MedicalTestSpecifications;
 using Services.Specifications.PatientSpecifications;
 using ServicesAbstraction.Common;

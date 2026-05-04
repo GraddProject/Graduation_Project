@@ -7,11 +7,12 @@ using System.Threading.Tasks;
 
 namespace Services.Specifications.PatientSpecifications
 {
-     class DoctorsConfirmedSpecification :BaseSpecifications<Doctor>
+    class DoctorPatientsCardsSpecification : BaseSpecifications<Patient>
     {
-        public DoctorsConfirmedSpecification() : base(D => D.User.EmailConfirmed == true)
+        public DoctorPatientsCardsSpecification(int doctorId)
+            : base(p => p.DoctorID == doctorId)
         {
-            AddInclude(d => d.User);
+            AddInclude(p => p.User);
         }
     }
 }

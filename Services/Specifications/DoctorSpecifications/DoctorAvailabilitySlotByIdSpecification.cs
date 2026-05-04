@@ -6,7 +6,7 @@ using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Services.Specifications.DoctorSpecifications
+namespace Services.Specifications.PatientSpecifications
 {
     class DoctorAvailabilitySlotByIdSpecification : BaseSpecifications<AvailabilitySlot>
     {

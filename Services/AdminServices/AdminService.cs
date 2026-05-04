@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
 using Services.Specifications;
-using Services.Specifications.DoctorSpecifications;
+using Services.Specifications.PatientSpecifications;
 using Services.Specifications.PatientSpecifications;
 using ServicesAbstraction.IAdminAbstraction;
 using Shared.DTos.DashBoardDTos;

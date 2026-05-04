@@ -3,6 +3,8 @@ using Shared.DTos.DashBoardDTos;
 using Shared.DTos.DoctorDTos;
 using Shared.DTos.MedicalHistoryDTos;
 using Shared.DTos.MedicalTestDTos;
+using Shared.DTos.PaginationDTo;
+using Shared.DTos.PaginationDTo.DoctorDashBoardDTos;
 using Shared.ErrorModels;
 using System;
 using System.Collections.Generic;
@@ -61,6 +63,11 @@ namespace ServicesAbstraction.DoctorAbstraction
         Task<MedicalTestFileDto> ViewPatientMedicalTestAsync(string Email, int PatientId, int medicalTestId);
 
 
+
+
+        Task<PaginatedResult<DoctorPatientCardDto>> GetAllPatientsAsync(string Email, DoctorPatientsQueryParams queryParams);
+
         Task<DoctorDashboardOverviewDto> GetDoctorDashboardOverviewAsync(string Email);
+
     }
 }

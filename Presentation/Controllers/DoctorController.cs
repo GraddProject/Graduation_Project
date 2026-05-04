@@ -8,6 +8,8 @@ using Shared.DTos.DoctorDTos;
 using Shared.DTos.MedicalHistoryDTos;
 using Shared.DTos.MedicalTestDTos;
 using Shared.DTos.MlDTos;
+using Shared.DTos.PaginationDTo;
+using Shared.DTos.PaginationDTo.DoctorDashBoardDTos;
 using Shared.DTos.PredictionDTos;
 using Shared.ErrorModels;
 using System.Security.Claims;
@@ -329,6 +331,17 @@ namespace Presentation.Controllers
 
             var result = await _serviceManger.DoctorService
                 .GetDoctorDashboardOverviewAsync(email!);
+
+            return Ok(result);
+        }
+
+
+        [HttpGet("patients")]
+        public async Task<ActionResult<PaginatedResult<DoctorPatientCardDto>>> GetAllPatients([FromQuery] DoctorPatientsQueryParams queryParams)
+        {
+            var email = User.FindFirstValue(ClaimTypes.Email);
+
+            var result = await _serviceManger.DoctorService.GetAllPatientsAsync(email!, queryParams);
 
             return Ok(result);
         }

@@ -3,7 +3,7 @@ using DomainLayer.Exceptions;
 using DomainLayer.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
-using Services.Specifications.DoctorSpecifications;
+using Services.Specifications.PatientSpecifications;
 using Services.Specifications.PatientSpecifications;
 using Services.Specifications.PredictionSpecifications;
 using ServicesAbstraction.ModelAbstraction;

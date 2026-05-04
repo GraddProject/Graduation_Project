@@ -3,7 +3,7 @@ using DomainLayer.Contracts;
 using DomainLayer.Exceptions;
 using DomainLayer.Models;
 using Services.Specifications.AppointmentSpecifications;
-using Services.Specifications.DoctorSpecifications;
+using Services.Specifications.PatientSpecifications;
 using Services.Specifications.MedicalHistorySpecification;
 using Services.Specifications.MedicalTestSpecifications;
 using Services.Specifications.PatientSpecifications;
@@ -17,6 +17,8 @@ using Shared.DTos.DoctorDTos;
 using Shared.DTos.MedicalHistoryDTos;
 using Shared.DTos.MedicalTestDTos;
 using Shared.DTos.NotificationDTos;
+using Shared.DTos.PaginationDTo;
+using Shared.DTos.PaginationDTo.DoctorDashBoardDTos;
 using Shared.ErrorModels;
 using AppointmentType = DomainLayer.Models.AppointmentType;
 
@@ -704,6 +706,125 @@ namespace Services.DoctorServices
             return _mapper.Map<IEnumerable<DoctorPatientDto>>(patients);
         }
 
+        public async Task<PaginatedResult<DoctorPatientCardDto>> GetAllPatientsAsync(string Email,DoctorPatientsQueryParams queryParams)
+        {
+            if (string.IsNullOrWhiteSpace(Email))
+                throw new UnauthorizedException();
+
+            queryParams ??= new DoctorPatientsQueryParams();
+
+            var DRepo = _unitOfWork.GetRepository<Doctor>();
+            var PRepo = _unitOfWork.GetRepository<Patient>();
+            var appointmentRepo = _unitOfWork.GetRepository<Appointment>();
+            var predictionRepo = _unitOfWork.GetRepository<PredictionRecord>();
+
+            var spec = new DoctorDetailsSpecification(Email);
+            var doctor = await DRepo.GetByIdAsync(spec);
+
+            if (doctor == null)
+                throw new DoctorNotFoundException("Doctor not found.");
+
+            await CompleteExpiredConfirmedAppointmentsForDoctorAsync(doctor.Id);
+
+            var patients = await PRepo.GetAllAsync(
+                new DoctorPatientsCardsSpecification(doctor.Id));
+
+            var appointments = await appointmentRepo.GetAllAsync(
+                new DoctorPatientCardsAppointmentsSpecification(doctor.Id));
+
+            var predictions = await predictionRepo.GetAllAsync(
+                new DoctorPatientCardsPredictionsSpecification(doctor.Id));
+
+            var now = DateTime.Now;
+
+            var Data = patients.Select(p =>
+            {
+                var patientAppointments = appointments
+                    .Where(a => a.PatientId == p.Id && a.AvailabilitySlot is not null)
+                    .ToList();
+
+                var lastAppointment = patientAppointments
+                    .Where(a => a.Status == AppointmentStatus.Completed)
+                    .OrderByDescending(a => a.AvailabilitySlot.StartAt)
+                    .FirstOrDefault();
+
+                var nextAppointment = patientAppointments
+                    .Where(a =>
+                        a.AvailabilitySlot.StartAt >= now &&
+                        (
+                            a.Status == AppointmentStatus.Confirmed ||
+                            a.Status == AppointmentStatus.ReschedulePending
+                        ))
+                    .OrderBy(a => a.AvailabilitySlot.StartAt)
+                    .FirstOrDefault();
+
+                var latestPrediction = predictions
+                    .Where(pr => pr.PatientId == p.Id)
+                    .OrderByDescending(pr => pr.CreatedAt)
+                    .FirstOrDefault();
+
+                var pregnancyWeek = p.MedicalInfo?.PregnancyWeek;
+
+                return new DoctorPatientCardDto
+                {
+                    PatientId = p.Id,
+                    DisplayName = p.User.DisplayName,
+                    Email = p.User.Email ?? string.Empty,
+
+                    PregnancyWeek = pregnancyWeek,
+                    Trimester = GetTrimester(pregnancyWeek),
+
+                    //RiskLevel = latestPrediction?.Result ?? "Not Predicted",
+                    RiskLevel = GetRiskLevel(latestPrediction?.Confidence) ?? "Not Predicted",
+
+                    LastAppointmentAt = lastAppointment?.AvailabilitySlot.StartAt,
+                    NextAppointmentAt = nextAppointment?.AvailabilitySlot.StartAt,
+
+                    CreatedAt = p.User.CreatedAt
+                };
+            });
+
+            if (!string.IsNullOrEmpty(queryParams.search))
+            {
+                var search = queryParams.search.Trim().ToLower();
+
+                Data = Data.Where(p =>
+                    p.PatientId.ToString().Contains(search) ||
+                    p.DisplayName.ToLower().Contains(search) ||
+                    p.Email.ToLower().Contains(search));
+            }
+
+            Data = queryParams.sort switch
+            {
+                DoctorPatientsSortingOptions.RiskLevel =>
+                    Data.OrderByDescending(p => GetRiskOrder(p.RiskLevel))
+                        .ThenBy(p => p.NextAppointmentAt ?? DateTime.MaxValue),
+
+                DoctorPatientsSortingOptions.Oldest =>
+                    Data.OrderBy(p => p.CreatedAt),
+
+                DoctorPatientsSortingOptions.NextAppointmentAsc =>
+                    Data.OrderBy(p => p.NextAppointmentAt ?? DateTime.MaxValue),
+
+                _ =>
+                    Data.OrderByDescending(p => p.CreatedAt)
+            };
+
+            var totalCount = Data.Count();
+
+            var pagedData = Data
+                .Skip((queryParams.pageNumber - 1) * queryParams.PageSize)
+                .Take(queryParams.PageSize)
+                .ToList();
+
+            return new PaginatedResult<DoctorPatientCardDto>(
+                queryParams.pageNumber,
+                queryParams.PageSize,
+                totalCount,
+                pagedData
+            );
+        }
+
 
 
         public async Task<DoctorPatientDto> GetPatientByIdAsync(string Email, int patientId)
@@ -1230,6 +1351,55 @@ namespace Services.DoctorServices
                 return 0;
 
             return (int)Math.Round((value * 100.0) / total);
+        }
+
+
+        private static string? GetTrimester(int? pregnancyWeek)
+        {
+            if (!pregnancyWeek.HasValue || pregnancyWeek.Value <= 0)
+                return null;
+
+            if (pregnancyWeek.Value <= 13)
+                return "1st Trimester";
+
+            if (pregnancyWeek.Value <= 27)
+                return "2nd Trimester";
+
+            return "3rd Trimester";
+        }
+
+
+        private static string? GetRiskLevel(decimal? confidence)
+        {
+            if (confidence == null)
+                return null;
+
+            if (confidence >= 75)
+                return "High Risk";
+
+            if (confidence >= 50)
+                return "Medium Risk";
+
+            return "Low Risk";
+        }
+
+        private static int GetRiskOrder(string? riskLevel)
+        {
+            if (string.IsNullOrWhiteSpace(riskLevel))
+                return 0;
+
+            var risk = riskLevel.Trim().ToLower();
+
+            if (risk.Contains("high"))
+                return 3;
+
+            if (risk.Contains("medium"))
+                return 2;
+
+            if (risk.Contains("low"))
+                return 1;
+
+            return 0;
         }
     }
 }
