@@ -168,6 +168,17 @@ namespace Presentation.Controllers
         }
 
 
+        [HttpPost("AddWeeklyAvailabilitySlotsAsync")]
+        public async Task<ActionResult<ServiceResponse>> AddWeeklyAvailabilitySlotsAsync(AddWeeklyAvailabilitySlotsDto dto)
+        {
+            var email = User.FindFirstValue(ClaimTypes.Email);
+
+            var result = await _serviceManger.DoctorService.AddWeeklyAvailabilitySlotsAsync(email!, dto);
+
+            return Ok(result);
+        }
+
+
 
         [HttpPost("AddAvailabilitySlot")]
         public async Task<ActionResult<bool>> AddAvailabilitySlot(AddAvailabilitySlotDto dto)

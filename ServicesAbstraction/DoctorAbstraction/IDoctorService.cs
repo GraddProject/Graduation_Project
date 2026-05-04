@@ -31,6 +31,9 @@ namespace ServicesAbstraction.DoctorAbstraction
         public Task<ServiceResponse> DeleteMedicalHistoryAsync(string Email, int PatientId, int MedicalHistoryId);
         public Task<ServiceResponse> DeletePreScriptionAsync(string Email, int PatientId, int medicalHistoryId, int prescriptionId);
 
+
+        Task<ServiceResponse> AddWeeklyAvailabilitySlotsAsync(string email,AddWeeklyAvailabilitySlotsDto dto);
+
         Task<ServiceResponse> AddAvailabilitySlotsRangeAsync(string email,AddAvailabilitySlotsRangeDto dto);
         public Task<bool> AddAvailabilitySlotAsync(string Email, AddAvailabilitySlotDto addAvailabilitySlot);
 

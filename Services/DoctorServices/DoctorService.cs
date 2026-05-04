@@ -28,6 +28,124 @@ namespace Services.DoctorServices
                                 INotificationService _notificationService) : IDoctorService
     {
 
+        public async Task<ServiceResponse> AddWeeklyAvailabilitySlotsAsync(string email,AddWeeklyAvailabilitySlotsDto dto)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+                throw new UnauthorizedException();
+
+            if (dto is null)
+                throw new BadRequestException("Availability data is required.");
+
+            if (dto.DaysOfWeek is null || !dto.DaysOfWeek.Any())
+                throw new BadRequestException("Please select at least one day.");
+
+            if (dto.StartTime >= dto.EndTime)
+                throw new BadRequestException("End time must be after start time.");
+
+            if (dto.SessionDurationInMinutes <= 0)
+                throw new BadRequestException("Session duration must be greater than zero.");
+
+            if (dto.RepeatForWeeks < 1 || dto.RepeatForWeeks > 4)
+                throw new BadRequestException("Repeat weeks must be between 1 and 4.");
+
+            var totalMinutes = (dto.EndTime - dto.StartTime).TotalMinutes;
+
+            if (totalMinutes < dto.SessionDurationInMinutes)
+                throw new BadRequestException("Time range must be greater than or equal to session duration.");
+
+            if (totalMinutes % dto.SessionDurationInMinutes != 0)
+                throw new BadRequestException("Time range must be divisible by session duration.");
+
+            var domainType = dto.Type switch
+            {
+                Shared.DTos.AppointmentDTos.AppointmentType.Online
+                    => DomainLayer.Models.AppointmentType.Online,
+
+                Shared.DTos.AppointmentDTos.AppointmentType.Offline
+                    => DomainLayer.Models.AppointmentType.Offline,
+
+                _ => throw new BadRequestException("Invalid appointment type.")
+            };
+
+            var doctorRepo = _unitOfWork.GetRepository<Doctor>();
+            var slotRepo = _unitOfWork.GetRepository<AvailabilitySlot>();
+
+            var doctor = await doctorRepo.GetByIdAsync(new DoctorDetailsSpecification(email));
+
+            if (doctor is null)
+                throw new DoctorNotFoundException("Doctor not found.");
+
+            var existingSlots = await slotRepo.GetAllAsync(
+                new DoctorAvailabilitySlotsSpecification(doctor.Id));
+
+            var generatedSlots = new List<AvailabilitySlot>();
+
+            var sessionDuration = TimeSpan.FromMinutes(dto.SessionDurationInMinutes);
+            var startDate = dto.StartDate.Date;
+
+            var selectedDays = dto.DaysOfWeek
+                .Distinct()
+                .ToList();
+
+            for (int week = 0; week < dto.RepeatForWeeks; week++)
+            {
+                foreach (var day in selectedDays)
+                {
+                    var daysToAdd = ((int)day - (int)startDate.DayOfWeek + 7) % 7;
+
+                    var currentDate = startDate
+                        .AddDays(daysToAdd)
+                        .AddDays(week * 7);
+
+                    var currentStart = currentDate.Add(dto.StartTime);
+                    var dayEnd = currentDate.Add(dto.EndTime);
+
+                    while (currentStart < dayEnd)
+                    {
+                        var currentEnd = currentStart.Add(sessionDuration);
+
+                        if (currentStart <= DateTime.Now)
+                            throw new BadRequestException(
+                                $"Generated slot from {currentStart:dd/MM/yyyy hh:mm tt} is in the past.");
+
+                        var hasOverlapWithExisting = existingSlots.Any(slot =>
+                            IsOverlapping(currentStart, sessionDuration, slot.StartAt, slot.Duration));
+
+                        var hasOverlapWithGenerated = generatedSlots.Any(slot =>
+                            IsOverlapping(currentStart, sessionDuration, slot.StartAt, slot.Duration));
+
+                        if (hasOverlapWithExisting || hasOverlapWithGenerated)
+                        {
+                            throw new BadRequestException(
+                                $"Generated slot from {currentStart:dd/MM/yyyy hh:mm tt} to {currentEnd:hh:mm tt} overlaps with another slot.");
+                        }
+
+                        generatedSlots.Add(new AvailabilitySlot
+                        {
+                            DoctorId = doctor.Id,
+                            StartAt = currentStart,
+                            Duration = sessionDuration,
+                            Type = domainType
+                        });
+
+                        currentStart = currentEnd;
+                    }
+                }
+            }
+
+            foreach (var slot in generatedSlots)
+                await slotRepo.AddAsync(slot);
+
+            await _unitOfWork.SaveChangesAsync();
+
+            return new ServiceResponse
+            {
+                Status = true,
+                Message = $"{generatedSlots.Count} availability slots added successfully."
+            };
+        }
+
+
 
         public async Task<ServiceResponse> AddAvailabilitySlotsRangeAsync(string email, AddAvailabilitySlotsRangeDto dto)
         {
@@ -774,7 +892,6 @@ namespace Services.DoctorServices
                     PregnancyWeek = pregnancyWeek,
                     Trimester = GetTrimester(pregnancyWeek),
 
-                    //RiskLevel = latestPrediction?.Result ?? "Not Predicted",
                     RiskLevel = GetRiskLevel(latestPrediction?.Confidence) ?? "Not Predicted",
 
                     LastAppointmentAt = lastAppointment?.AvailabilitySlot.StartAt,
