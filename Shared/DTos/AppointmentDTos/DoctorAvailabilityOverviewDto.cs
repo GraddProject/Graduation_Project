@@ -20,6 +20,5 @@ namespace Shared.DTos.AppointmentDTos
         public string BookingStatus { get; set; } = default!;
         public string? AppointmentStatus { get; set; }
 
-        public string DisplayStatus { get; set; } = default!;
     }
 }

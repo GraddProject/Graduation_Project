@@ -82,7 +82,7 @@ namespace Presentation.Controllers
             var email = User.FindFirstValue(ClaimTypes.Email);
 
 
-            var result = await _serviceManger.DoctorService.GetPatientByIdAsync(email,patientId);
+            var result = await _serviceManger.DoctorService.GetPatientByIdAsync(email, patientId);
 
             return Ok(result);
         }
@@ -196,12 +196,12 @@ namespace Presentation.Controllers
 
 
         [HttpGet("GetAvailabilityOverview")]
-        public async Task<ActionResult<IEnumerable<DoctorAvailabilityOverviewDto>>> GetAvailabilityOverview([FromQuery] AvailabilitySlotFilterDto filter = AvailabilitySlotFilterDto.All)
+        public async Task<ActionResult<IEnumerable<DoctorAvailabilityOverviewDto>>> GetAvailabilityOverview([FromQuery] AvailabilityOverviewQueryParams queryParams)
         {
             var email = User.FindFirstValue(ClaimTypes.Email);
 
             var result = await _serviceManger.DoctorService
-                .GetAvailabilityOverviewAsync(email!, filter);
+                .GetAvailabilityOverviewAsync(email!, queryParams);
 
             return Ok(result);
         }

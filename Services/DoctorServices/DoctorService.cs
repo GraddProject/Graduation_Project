@@ -6,7 +6,6 @@ using Services.Specifications.AppointmentSpecifications;
 using Services.Specifications.PatientSpecifications;
 using Services.Specifications.MedicalHistorySpecification;
 using Services.Specifications.MedicalTestSpecifications;
-using Services.Specifications.PatientSpecifications;
 using Services.Specifications.PredictionSpecifications;
 using Services.Specifications.PreScriptionSpecifications;
 using ServicesAbstraction.Common;
@@ -28,7 +27,7 @@ namespace Services.DoctorServices
                                 INotificationService _notificationService) : IDoctorService
     {
 
-        public async Task<ServiceResponse> AddWeeklyAvailabilitySlotsAsync(string email,AddWeeklyAvailabilitySlotsDto dto)
+        public async Task<ServiceResponse> AddWeeklyAvailabilitySlotsAsync(string email, AddWeeklyAvailabilitySlotsDto dto)
         {
             if (string.IsNullOrWhiteSpace(email))
                 throw new UnauthorizedException();
@@ -286,10 +285,16 @@ namespace Services.DoctorServices
             return await _unitOfWork.SaveChangesAsync() > 0;
         }
 
-        public async Task<IEnumerable<DoctorAvailabilityOverviewDto>> GetAvailabilityOverviewAsync(string email, AvailabilitySlotFilterDto filter = AvailabilitySlotFilterDto.All)
+
+
+
+
+        public async Task<IEnumerable<DoctorAvailabilityOverviewDto>> GetAvailabilityOverviewAsync(string email,AvailabilityOverviewQueryParams? queryParams = null)
         {
             if (string.IsNullOrWhiteSpace(email))
                 throw new UnauthorizedException();
+
+            queryParams ??= new AvailabilityOverviewQueryParams();
 
             var doctorRepo = _unitOfWork.GetRepository<Doctor>();
             var slotRepo = _unitOfWork.GetRepository<AvailabilitySlot>();
@@ -304,37 +309,54 @@ namespace Services.DoctorServices
             var slots = await slotRepo.GetAllAsync(
                 new DoctorAvailabilitySlotsSpecification(doctor.Id));
 
+            var today = DateTime.Now.Date;
+            var currentWeekStart = GetStartOfWeek(today);
+            var nextWeekStart = currentWeekStart.AddDays(7);
+
             var filteredSlots = slots.Where(slot =>
             {
-                var isBooked =
-                    slot.Appointment is not null &&
-                    slot.Appointment.Status == AppointmentStatus.Confirmed;
-
+                var isBooked = IsBooked(slot);
                 var isAvailable = slot.Appointment is null;
 
-                return filter switch
+                if (queryParams.Status == AvailabilitySlotFilterDto.Booked && !isBooked)
+                    return false;
+
+                if (queryParams.Status == AvailabilitySlotFilterDto.Available && !isAvailable)
+                    return false;
+
+                if (queryParams.Status == AvailabilitySlotFilterDto.All && !isBooked && !isAvailable)
+                    return false;
+
+                if (queryParams.Type.HasValue &&
+                    slot.Type.ToString() != queryParams.Type.Value.ToString())
+                    return false;
+
+                if (queryParams.DayOfWeek.HasValue &&
+                    slot.StartAt.DayOfWeek != queryParams.DayOfWeek.Value)
+                    return false;
+
+                if (queryParams.DateFilter == AvailabilityDateFilterDto.CurrentWeek)
                 {
-                    AvailabilitySlotFilterDto.Booked => isBooked,
+                    return slot.StartAt >= currentWeekStart &&
+                           slot.StartAt < currentWeekStart.AddDays(7);
+                }
 
-                    AvailabilitySlotFilterDto.Available => isAvailable,
+                if (queryParams.DateFilter == AvailabilityDateFilterDto.NextWeek)
+                {
+                    return slot.StartAt >= nextWeekStart &&
+                           slot.StartAt < nextWeekStart.AddDays(7);
+                }
 
-                    AvailabilitySlotFilterDto.All => isBooked || isAvailable,
-
-                    _ => isBooked || isAvailable
-                };
+                return true;
             });
 
-            return filteredSlots.Select(slot =>
+            return filteredSlots
+                    .OrderBy(slot => slot.StartAt)
+                    .Select(slot =>
             {
                 var startAt = slot.StartAt;
                 var endAt = slot.StartAt.Add(slot.Duration);
-
-                var isBooked =
-                    slot.Appointment is not null &&
-                    (
-                    slot.Appointment.Status == AppointmentStatus.Confirmed ||
-                    slot.Appointment.Status == AppointmentStatus.ReschedulePending
-                     );
+                var isBooked = IsBooked(slot);
 
                 return new DoctorAvailabilityOverviewDto
                 {
@@ -346,19 +368,15 @@ namespace Services.DoctorServices
                     Duration = $"{(int)slot.Duration.TotalMinutes} min",
 
                     VisitType = slot.Type.ToString(),
-
                     BookingStatus = isBooked ? "Booked" : "Available",
 
                     AppointmentStatus = isBooked
-                        ? AppointmentStatus.Confirmed.ToString()
-                        : null,
-
-                    DisplayStatus = isBooked
-                        ? "Booked"
-                        : "Available"
+                        ? slot.Appointment!.Status.ToString()
+                        : null
                 };
             });
         }
+
 
         public async Task<IEnumerable<AvailabilitySlotDto>> GetMyAvailabilitySlotsAsync(string Email)
         {
@@ -824,7 +842,7 @@ namespace Services.DoctorServices
             return _mapper.Map<IEnumerable<DoctorPatientDto>>(patients);
         }
 
-        public async Task<PaginatedResult<DoctorPatientCardDto>> GetAllPatientsAsync(string Email,DoctorPatientsQueryParams queryParams)
+        public async Task<PaginatedResult<DoctorPatientCardDto>> GetAllPatientsAsync(string Email, DoctorPatientsQueryParams queryParams)
         {
             if (string.IsNullOrWhiteSpace(Email))
                 throw new UnauthorizedException();
@@ -1517,6 +1535,23 @@ namespace Services.DoctorServices
                 return 1;
 
             return 0;
+        }
+
+        private static bool IsBooked(AvailabilitySlot slot)
+        {
+            return slot.Appointment is not null &&
+                   (
+                       slot.Appointment.Status == AppointmentStatus.Confirmed ||
+                       slot.Appointment.Status == AppointmentStatus.ReschedulePending
+                   );
+        }
+        private static DateTime GetStartOfWeek(DateTime date)
+        {
+            var weekStartsOn = DayOfWeek.Saturday;
+
+            var diff = (7 + (date.DayOfWeek - weekStartsOn)) % 7;
+
+            return date.Date.AddDays(-diff);
         }
     }
 }

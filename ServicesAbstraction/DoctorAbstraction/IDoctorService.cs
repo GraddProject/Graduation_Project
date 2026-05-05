@@ -37,8 +37,9 @@ namespace ServicesAbstraction.DoctorAbstraction
         Task<ServiceResponse> AddAvailabilitySlotsRangeAsync(string email,AddAvailabilitySlotsRangeDto dto);
         public Task<bool> AddAvailabilitySlotAsync(string Email, AddAvailabilitySlotDto addAvailabilitySlot);
 
-
-        Task<IEnumerable<DoctorAvailabilityOverviewDto>> GetAvailabilityOverviewAsync(string email,AvailabilitySlotFilterDto filter = AvailabilitySlotFilterDto.All);
+        Task<IEnumerable<DoctorAvailabilityOverviewDto>> GetAvailabilityOverviewAsync(string email, AvailabilityOverviewQueryParams? queryParams = null);
+        //Task<IEnumerable<DoctorAvailabilityOverviewDto>> GetAvailabilityOverviewAsync(string email,AvailabilitySlotFilterDto filter = AvailabilitySlotFilterDto.All);
+      
         public Task<IEnumerable<AvailabilitySlotDto>> GetMyAvailabilitySlotsAsync(string Email);
 
         Task<IEnumerable<DoctorAppointmentDto>> GetDoctorAppointmentsAsync(string Email, AppointmentStatusDto? status = null);
