@@ -11,6 +11,7 @@ namespace Shared.DTos.PaginationDTo.DoctorDashBoardDTos
         RiskLevel = 1,
         RecentlyAdded = 2,
         Oldest = 3,
-        NextAppointmentAsc = 4
+        NextAppointmentAsc = 4,
+        Trimester = 5
     }
 }

@@ -144,8 +144,6 @@ namespace Services.DoctorServices
             };
         }
 
-
-
         public async Task<ServiceResponse> AddAvailabilitySlotsRangeAsync(string email, AddAvailabilitySlotsRangeDto dto)
         {
             if (string.IsNullOrWhiteSpace(email))
@@ -289,7 +287,7 @@ namespace Services.DoctorServices
 
 
 
-        public async Task<IEnumerable<DoctorAvailabilityOverviewDto>> GetAvailabilityOverviewAsync(string email,AvailabilityOverviewQueryParams? queryParams = null)
+        public async Task<IEnumerable<DoctorAvailabilityOverviewDto>> GetAvailabilityOverviewAsync(string email, AvailabilityOverviewQueryParams? queryParams = null)
         {
             if (string.IsNullOrWhiteSpace(email))
                 throw new UnauthorizedException();
@@ -935,6 +933,13 @@ namespace Services.DoctorServices
                     Data.OrderByDescending(p => GetRiskOrder(p.RiskLevel))
                         .ThenBy(p => p.NextAppointmentAt ?? DateTime.MaxValue),
 
+
+                DoctorPatientsSortingOptions.Trimester =>
+                    Data.OrderBy(p => GetTrimesterOrder(p.PregnancyWeek))
+                      .ThenBy(p => p.PregnancyWeek ?? int.MaxValue)
+                      .ThenBy(p => p.NextAppointmentAt ?? DateTime.MaxValue),
+
+
                 DoctorPatientsSortingOptions.Oldest =>
                     Data.OrderBy(p => p.CreatedAt),
 
@@ -1552,6 +1557,23 @@ namespace Services.DoctorServices
             var diff = (7 + (date.DayOfWeek - weekStartsOn)) % 7;
 
             return date.Date.AddDays(-diff);
+        }
+
+        private static int GetTrimesterOrder(int? pregnancyWeek)
+        {
+            if (!pregnancyWeek.HasValue || pregnancyWeek.Value <= 0)
+                return 4;
+
+            if (pregnancyWeek.Value <= 13)
+                return 1;
+
+            if (pregnancyWeek.Value <= 27)
+                return 2;
+
+            if (pregnancyWeek.Value <= 42)
+                return 3;
+
+            return 4;
         }
     }
 }
