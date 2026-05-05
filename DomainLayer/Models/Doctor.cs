@@ -15,7 +15,7 @@ namespace DomainLayer.Models
         public int YearsOfExperience { get; set; }
 
         public string UserId { get; set; }
-        public string? Location { get; set; }
+        //public string? Location { get; set; }
 
         public ApplicationUser User { get; set; } = default!;
 

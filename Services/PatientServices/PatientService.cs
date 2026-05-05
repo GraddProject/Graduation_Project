@@ -20,92 +20,92 @@ namespace Services.PatientServices
     public class PatientService(IUnitOfWork _unitOfWork, IMapper _mapper,
         IFileStorageService _fileStorageService, INotificationService _notificationService) : IPatientService
     {
-        //public async Task<bool> CompleteProfileAsync(string userId, CompleteMedicalProfileDto profileDto)
-        //{
-        //    var psepc = new PatientByIdSpecification(userId);
-        //    var prepo = _unitOfWork.GetRepository<Patient>();
-        //    var patient = await prepo.GetByIdAsync(psepc);
-
-        //    if (patient == null) throw new PatientNotFoundException(userId);
-
-        //    _mapper.Map(profileDto, patient.MedicalInfo);
-        //    prepo.Update(patient);
-        //    await _unitOfWork.SaveChangesAsync();
-        //    return true;
-        //}
-
-
-
         public async Task<bool> CompleteProfileAsync(string userId, CompleteMedicalProfileDto profileDto)
         {
-            if (string.IsNullOrWhiteSpace(userId))
-                throw new UnauthorizedException();
+            var psepc = new PatientByIdSpecification(userId);
+            var prepo = _unitOfWork.GetRepository<Patient>();
+            var patient = await prepo.GetByIdAsync(psepc);
 
-            if (profileDto is null)
-                throw new BadRequestException("Profile data is required.");
+            if (patient == null) throw new PatientNotFoundException(userId);
 
-            var patientRepo = _unitOfWork.GetRepository<Patient>();
-
-            var patient = await patientRepo.GetByIdAsync(new PatientByIdSpecification(userId));
-
-            if (patient is null)
-                throw new PatientNotFoundException(userId);
-
-            if (patient.User is null)
-                throw new BadRequestException("Patient user data is not loaded.");
-
-            ValidateProfileImage(profileDto.ProfileImage);
-
-            var oldProfileImagePath = patient.User.ProfileImagePath;
-            string? uploadedObjectName = null;
-
-            try
-            {
-                if (profileDto.ProfileImage is not null && profileDto.ProfileImage.Length > 0)
-                {
-                    var objectName = BuildProfileImageObjectName("patients", patient.Id, profileDto.ProfileImage.FileName);
-
-                    uploadedObjectName = await _fileStorageService.UploadFileAsync(profileDto.ProfileImage,objectName);
-
-                    patient.User.ProfileImagePath = uploadedObjectName;
-                }
-
-                _mapper.Map(profileDto, patient.MedicalInfo);
-
-                patientRepo.Update(patient);
-
-                await _unitOfWork.SaveChangesAsync();
-
-                if (!string.IsNullOrWhiteSpace(uploadedObjectName) &&
-                    !string.IsNullOrWhiteSpace(oldProfileImagePath))
-                {
-                    try
-                    {
-                        await _fileStorageService.DeleteFileAsync(oldProfileImagePath);
-                    }
-                    catch
-                    {
-                    }
-                }
-
-                return true;
-            }
-            catch
-            {
-                if (!string.IsNullOrWhiteSpace(uploadedObjectName))
-                {
-                    try
-                    {
-                        await _fileStorageService.DeleteFileAsync(uploadedObjectName);
-                    }
-                    catch
-                    {
-                    }
-                }
-
-                throw;
-            }
+            _mapper.Map(profileDto, patient.MedicalInfo);
+            prepo.Update(patient);
+            await _unitOfWork.SaveChangesAsync();
+            return true;
         }
+
+
+
+        //public async Task<bool> CompleteProfileAsync(string userId, CompleteMedicalProfileDto profileDto)
+        //{
+        //    if (string.IsNullOrWhiteSpace(userId))
+        //        throw new UnauthorizedException();
+
+        //    if (profileDto is null)
+        //        throw new BadRequestException("Profile data is required.");
+
+        //    var patientRepo = _unitOfWork.GetRepository<Patient>();
+
+        //    var patient = await patientRepo.GetByIdAsync(new PatientByIdSpecification(userId));
+
+        //    if (patient is null)
+        //        throw new PatientNotFoundException(userId);
+
+        //    if (patient.User is null)
+        //        throw new BadRequestException("Patient user data is not loaded.");
+
+        //    ValidateProfileImage(profileDto.ProfileImage);
+
+        //    var oldProfileImagePath = patient.User.ProfileImagePath;
+        //    string? uploadedObjectName = null;
+
+        //    try
+        //    {
+        //        if (profileDto.ProfileImage is not null && profileDto.ProfileImage.Length > 0)
+        //        {
+        //            var objectName = BuildProfileImageObjectName("patients", patient.Id, profileDto.ProfileImage.FileName);
+
+        //            uploadedObjectName = await _fileStorageService.UploadFileAsync(profileDto.ProfileImage,objectName);
+
+        //            patient.User.ProfileImagePath = uploadedObjectName;
+        //        }
+
+        //        _mapper.Map(profileDto, patient.MedicalInfo);
+
+        //        patientRepo.Update(patient);
+
+        //        await _unitOfWork.SaveChangesAsync();
+
+        //        if (!string.IsNullOrWhiteSpace(uploadedObjectName) &&
+        //            !string.IsNullOrWhiteSpace(oldProfileImagePath))
+        //        {
+        //            try
+        //            {
+        //                await _fileStorageService.DeleteFileAsync(oldProfileImagePath);
+        //            }
+        //            catch
+        //            {
+        //            }
+        //        }
+
+        //        return true;
+        //    }
+        //    catch
+        //    {
+        //        if (!string.IsNullOrWhiteSpace(uploadedObjectName))
+        //        {
+        //            try
+        //            {
+        //                await _fileStorageService.DeleteFileAsync(uploadedObjectName);
+        //            }
+        //            catch
+        //            {
+        //            }
+        //        }
+
+        //        throw;
+        //    }
+        //}
 
 
 
