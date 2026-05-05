@@ -20,6 +20,7 @@ namespace Services.Specifications.PatientSpecifications
         {
             AddInclude(p => p.User);
             AddInclude(p => p.MedicalHistory);
+
         }
     }
 }

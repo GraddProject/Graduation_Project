@@ -47,7 +47,14 @@ namespace Services.MappingProfiles
             .ForMember(d => d.Email, o => o.MapFrom(s => s.User.Email))
             .ForMember(d => d.PhoneNumber, o => o.MapFrom(s => s.User.PhoneNumber))
             .ForMember(d => d.CreatedAt, o => o.MapFrom(s => s.User.CreatedAt))
-            .ForMember(d => d.Actived, o => o.MapFrom(s => s.User.EmailConfirmed));
+            .ForMember(d => d.Actived, o => o.MapFrom(s => s.User.EmailConfirmed))
+            
+            .ForMember(dest => dest.Age, opt => opt.MapFrom(src => src.MedicalInfo != null ? src.MedicalInfo.Age : null))
+            .ForMember(dest => dest.BloodType, opt => opt.MapFrom(src => src.MedicalInfo != null ? src.MedicalInfo.BloodType : null))
+            .ForMember(dest => dest.Height, opt => opt.MapFrom(src => src.MedicalInfo != null ? src.MedicalInfo.Height : null))
+            .ForMember(dest => dest.Weight, opt => opt.MapFrom(src => src.MedicalInfo != null ? src.MedicalInfo.Weight : null))
+            .ForMember(dest => dest.PregnancyStartDate, opt => opt.MapFrom(src => src.MedicalInfo != null ? src.MedicalInfo.PregnancyStartDate : null))
+            .ForMember(dest => dest.PregnancyWeek, opt => opt.MapFrom(src => src.MedicalInfo != null ? src.MedicalInfo.PregnancyWeek : null));
 
 
 
@@ -70,7 +77,7 @@ namespace Services.MappingProfiles
 
 
 
-          
+
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Http;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -9,6 +10,7 @@ namespace Shared.DTos.PatientDTos
 {
     public class CompleteMedicalProfileDto
     {
+        public IFormFile? ProfileImage { get; set; }
         public DateOnly? DateOfBirth { get; set; }
 
         public DateOnly? PregnancyStartDate { get; set; }

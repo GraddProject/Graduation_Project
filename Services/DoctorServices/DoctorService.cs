@@ -3,9 +3,9 @@ using DomainLayer.Contracts;
 using DomainLayer.Exceptions;
 using DomainLayer.Models;
 using Services.Specifications.AppointmentSpecifications;
-using Services.Specifications.PatientSpecifications;
 using Services.Specifications.MedicalHistorySpecification;
 using Services.Specifications.MedicalTestSpecifications;
+using Services.Specifications.PatientSpecifications;
 using Services.Specifications.PredictionSpecifications;
 using Services.Specifications.PreScriptionSpecifications;
 using ServicesAbstraction.Common;
@@ -18,6 +18,7 @@ using Shared.DTos.MedicalTestDTos;
 using Shared.DTos.NotificationDTos;
 using Shared.DTos.PaginationDTo;
 using Shared.DTos.PaginationDTo.DoctorDashBoardDTos;
+using Shared.DTos.PatientDTos;
 using Shared.ErrorModels;
 using AppointmentType = DomainLayer.Models.AppointmentType;
 
@@ -986,7 +987,10 @@ namespace Services.DoctorServices
             if (patient is null)
                 throw PatientNotFoundException.Belong("Patient not found or does not belong to this doctor.");
 
-            return _mapper.Map<DoctorPatientDto>(patient);
+            var patientDto = _mapper.Map<DoctorPatientDto>(patient);
+            patientDto.Trimester = GetTrimester(patientDto.PregnancyWeek);
+
+            return patientDto;
         }
 
 

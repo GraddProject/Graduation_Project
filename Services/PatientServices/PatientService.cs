@@ -1,11 +1,9 @@
 ﻿using AutoMapper;
 using DomainLayer.Contracts;
 using DomainLayer.Exceptions;
-using DomainLayer.IdentityModule;
 using DomainLayer.Models;
-using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Http;
 using Services.Specifications.AppointmentSpecifications;
-using Services.Specifications.PatientSpecifications;
 using Services.Specifications.MedicalTestSpecifications;
 using Services.Specifications.PatientSpecifications;
 using ServicesAbstraction.Common;
@@ -16,30 +14,100 @@ using Shared.DTos.MedicalTestDTos;
 using Shared.DTos.NotificationDTos;
 using Shared.DTos.PatientDTos;
 using Shared.ErrorModels;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Services.PatientServices
 {
     public class PatientService(IUnitOfWork _unitOfWork, IMapper _mapper,
         IFileStorageService _fileStorageService, INotificationService _notificationService) : IPatientService
     {
+        //public async Task<bool> CompleteProfileAsync(string userId, CompleteMedicalProfileDto profileDto)
+        //{
+        //    var psepc = new PatientByIdSpecification(userId);
+        //    var prepo = _unitOfWork.GetRepository<Patient>();
+        //    var patient = await prepo.GetByIdAsync(psepc);
+
+        //    if (patient == null) throw new PatientNotFoundException(userId);
+
+        //    _mapper.Map(profileDto, patient.MedicalInfo);
+        //    prepo.Update(patient);
+        //    await _unitOfWork.SaveChangesAsync();
+        //    return true;
+        //}
+
+
+
         public async Task<bool> CompleteProfileAsync(string userId, CompleteMedicalProfileDto profileDto)
         {
-            var psepc = new PatientByIdSpecification(userId);
-            var prepo = _unitOfWork.GetRepository<Patient>();
-            var patient = await prepo.GetByIdAsync(psepc);
+            if (string.IsNullOrWhiteSpace(userId))
+                throw new UnauthorizedException();
 
-            if (patient == null) throw new PatientNotFoundException(userId);
+            if (profileDto is null)
+                throw new BadRequestException("Profile data is required.");
 
-            _mapper.Map(profileDto, patient.MedicalInfo);
-            prepo.Update(patient);
-            await _unitOfWork.SaveChangesAsync();
-            return true;
+            var patientRepo = _unitOfWork.GetRepository<Patient>();
+
+            var patient = await patientRepo.GetByIdAsync(new PatientByIdSpecification(userId));
+
+            if (patient is null)
+                throw new PatientNotFoundException(userId);
+
+            if (patient.User is null)
+                throw new BadRequestException("Patient user data is not loaded.");
+
+            ValidateProfileImage(profileDto.ProfileImage);
+
+            var oldProfileImagePath = patient.User.ProfileImagePath;
+            string? uploadedObjectName = null;
+
+            try
+            {
+                if (profileDto.ProfileImage is not null && profileDto.ProfileImage.Length > 0)
+                {
+                    var objectName = BuildProfileImageObjectName("patients", patient.Id, profileDto.ProfileImage.FileName);
+
+                    uploadedObjectName = await _fileStorageService.UploadFileAsync(profileDto.ProfileImage,objectName);
+
+                    patient.User.ProfileImagePath = uploadedObjectName;
+                }
+
+                _mapper.Map(profileDto, patient.MedicalInfo);
+
+                patientRepo.Update(patient);
+
+                await _unitOfWork.SaveChangesAsync();
+
+                if (!string.IsNullOrWhiteSpace(uploadedObjectName) &&
+                    !string.IsNullOrWhiteSpace(oldProfileImagePath))
+                {
+                    try
+                    {
+                        await _fileStorageService.DeleteFileAsync(oldProfileImagePath);
+                    }
+                    catch
+                    {
+                    }
+                }
+
+                return true;
+            }
+            catch
+            {
+                if (!string.IsNullOrWhiteSpace(uploadedObjectName))
+                {
+                    try
+                    {
+                        await _fileStorageService.DeleteFileAsync(uploadedObjectName);
+                    }
+                    catch
+                    {
+                    }
+                }
+
+                throw;
+            }
         }
+
+
 
         public async Task<IEnumerable<AvailabilitySlotDto>> GetAllSlotsAsync(string Email)
         {
@@ -539,6 +607,43 @@ namespace Services.PatientServices
             }
 
             await _unitOfWork.SaveChangesAsync();
+        }
+
+
+
+        private static void ValidateProfileImage(IFormFile? file)
+        {
+            if (file is null || file.Length == 0)
+                return;
+
+            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png" };
+            var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+
+            if (!allowedExtensions.Contains(extension))
+                throw new BadRequestException("Only jpg, jpeg, and png images are allowed.");
+
+            const long maxFileSize = 5 * 1024 * 1024;
+
+            if (file.Length > maxFileSize)
+                throw new BadRequestException("Profile image size must not exceed 5 MB.");
+        }
+
+        private static string BuildProfileImageObjectName(string ownerType, int ownerId, string fileName)
+        {
+            var extension = Path.GetExtension(fileName);
+            var originalName = Path.GetFileNameWithoutExtension(fileName);
+
+            var safeName = string.Concat(originalName
+                .Where(c => char.IsLetterOrDigit(c) || c == '-' || c == '_'))
+                .Trim();
+
+            if (string.IsNullOrWhiteSpace(safeName))
+                safeName = "profile-image";
+
+            var now = DateTime.Now;
+            var uniqueFileName = $"{Guid.NewGuid()}-{safeName}{extension}";
+
+            return $"profile-images/{ownerType}/{ownerId}/{now:yyyy}/{now:MM}/{uniqueFileName}";
         }
     }
 }
