@@ -13,7 +13,7 @@ namespace DomainLayer.IdentityModule
         public string DisplayName { get; set; } = default!;
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
-        //public string? ProfileImagePath { get; set; }
+        public string? ProfileImagePath { get; set; }
         public Doctor? Doctor { get; set; }
 
         public Patient? Patient { get; set; }

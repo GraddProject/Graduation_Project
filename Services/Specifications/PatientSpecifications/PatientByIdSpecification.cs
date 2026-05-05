@@ -11,6 +11,7 @@ namespace Services.Specifications.PatientSpecifications
     {
         public PatientByIdSpecification(string userId) :base(P=>P.UserId == userId)
         {
+            AddInclude(p => p.User);
         }
     }
 }

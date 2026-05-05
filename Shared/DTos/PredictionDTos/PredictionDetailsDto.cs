@@ -11,6 +11,8 @@ namespace Shared.DTos.PredictionDTos
         public int PredictionRecordId { get; set; }
 
         public string PatientName { get; set; } = default!;
+        public string? ProfileImageUrl { get; set; }
+
 
         public string Type { get; set; } = default!;
 

@@ -19,6 +19,21 @@ namespace Presentation.Controllers
     [Authorize(Roles = "Doctor")]
     public class DoctorController(IServiceManger _serviceManger) : ApiBaseController
     {
+
+        [HttpPost("complete-profile")]
+        [Consumes("multipart/form-data")]
+        public async Task<ActionResult<ServiceResponse>> CompleteProfile([FromForm] CompleteDoctorProfileDto dto)
+        {
+            var email = User.FindFirstValue(ClaimTypes.Email);
+
+            var result = await _serviceManger.DoctorService.CompleteProfileAsync(email!, dto);
+
+            return Ok(result);
+        }
+
+
+
+
         [HttpPost("predict")]
         public async Task<ActionResult<PredictionResponseDto>> Predict([FromBody] PredictionRequestDto request)
         {

@@ -11,6 +11,7 @@ namespace Shared.DTos.DoctorDTos
         public int PatientId { get; set; }
 
         public string DisplayName { get; set; } = default!;
+        public string? ProfileImageUrl { get; set; }
 
         public string Email { get; set; } = default!;
 

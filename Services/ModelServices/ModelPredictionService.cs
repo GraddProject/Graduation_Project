@@ -6,8 +6,10 @@ using Microsoft.Extensions.Options;
 using Services.Specifications.PatientSpecifications;
 using Services.Specifications.PatientSpecifications;
 using Services.Specifications.PredictionSpecifications;
+using ServicesAbstraction.Common;
 using ServicesAbstraction.ModelAbstraction;
 using Shared.DTos.MlDTos;
+using Shared.DTos.PatientDTos;
 using Shared.DTos.PredictionDTos;
 using System;
 using System.Collections.Generic;
@@ -25,12 +27,14 @@ namespace Services.ModelServices
         private readonly HttpClient _httpClient;
         private readonly IConfiguration _configuration;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IFileStorageService _fileStorageService;
 
-        public ModelPredictionService(HttpClient httpClient, IConfiguration configuration, IUnitOfWork unitOfWork)
+        public ModelPredictionService(HttpClient httpClient, IConfiguration configuration, IUnitOfWork unitOfWork, IFileStorageService fileStorageService)
         {
             _httpClient = httpClient;
             _configuration = configuration;
             _unitOfWork = unitOfWork;
+            _fileStorageService = fileStorageService;
         }
         public async Task<PredictionResponseDto> PredictAsync(PredictionRequestDto request)
         {
@@ -72,7 +76,7 @@ namespace Services.ModelServices
             return (result, responseBody);
         }
 
-        public async Task<SavedPredictionResponseDto> CreateGdmPredictionAsync(string email,CreateGdmPredictionDto request)
+        public async Task<SavedPredictionResponseDto> CreateGdmPredictionAsync(string email, CreateGdmPredictionDto request)
         {
             if (string.IsNullOrWhiteSpace(email))
                 throw new UnauthorizedException();
@@ -156,16 +160,21 @@ namespace Services.ModelServices
             var predictions = await predictionRepo.GetAllAsync(
                 new DoctorPredictionsSpecification(doctor.Id));
 
-            return predictions.Select(p => new PredictionInsightDto
+            var data = predictions.Select(async p => new PredictionInsightDto
             {
                 PredictionRecordId = p.Id,
                 PatientName = p.Patient.User.DisplayName,
+
+                ProfileImageUrl = await _fileStorageService.GenerateReadUrlAsync(p.Patient.User.ProfileImagePath,TimeSpan.FromHours(12)),
+
                 MedicalHistoryId = p.MedicalHistory?.Id,
                 Type = p.Type.ToString(),
                 Date = p.CreatedAt.ToString("MMM dd, yyyy", CultureInfo.InvariantCulture),
                 Result = GetRiskLevel(p.Confidence),
                 Confidence = p.Confidence
             });
+
+            return await Task.WhenAll(data);
         }
 
 
@@ -198,6 +207,7 @@ namespace Services.ModelServices
             {
                 PredictionRecordId = prediction.Id,
                 PatientName = prediction.Patient.User.DisplayName,
+                ProfileImageUrl = await _fileStorageService.GenerateReadUrlAsync(prediction.Patient.User.ProfileImagePath,TimeSpan.FromHours(12)),
                 Type = prediction.Type.ToString(),
                 Date = prediction.CreatedAt.ToString("MMM dd, yyyy", CultureInfo.InvariantCulture),
                 Result = GetRiskLevel(prediction.Confidence),

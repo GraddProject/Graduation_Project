@@ -15,5 +15,7 @@ namespace ServicesAbstraction.Common
         Task<string> UploadFileAsync(IFormFile file, string objectName);
         Task DeleteFileAsync(string objectName);
         Task<MedicalTestFileDto> DownloadFileAsync(string objectName);
+
+        Task<string?> GenerateReadUrlAsync(string? objectName, TimeSpan? duration = null);
     }
 }

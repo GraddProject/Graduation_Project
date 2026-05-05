@@ -17,6 +17,9 @@ namespace ServicesAbstraction.DoctorAbstraction
 {
     public interface IDoctorService
     {
+
+
+        Task<ServiceResponse> CompleteProfileAsync(string email, CompleteDoctorProfileDto profileDto);
         public Task<IEnumerable<DoctorPatientDto>> GetAllPatientsAsync(string Email);
 
         Task<DoctorPatientDto> GetPatientByIdAsync(string Email,int patientId);

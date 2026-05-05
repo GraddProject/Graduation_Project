@@ -2,6 +2,7 @@
 using DomainLayer.Contracts;
 using DomainLayer.Exceptions;
 using DomainLayer.Models;
+using Microsoft.AspNetCore.Http;
 using Services.Specifications.AppointmentSpecifications;
 using Services.Specifications.MedicalHistorySpecification;
 using Services.Specifications.MedicalTestSpecifications;
@@ -20,6 +21,7 @@ using Shared.DTos.PaginationDTo;
 using Shared.DTos.PaginationDTo.DoctorDashBoardDTos;
 using Shared.DTos.PatientDTos;
 using Shared.ErrorModels;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 using AppointmentType = DomainLayer.Models.AppointmentType;
 
 namespace Services.DoctorServices
@@ -27,6 +29,86 @@ namespace Services.DoctorServices
     public class DoctorService(IUnitOfWork _unitOfWork, IMapper _mapper, IFileStorageService _fileStorageService,
                                 INotificationService _notificationService) : IDoctorService
     {
+
+        public async Task<ServiceResponse> CompleteProfileAsync(string email, CompleteDoctorProfileDto profileDto)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+                throw new UnauthorizedException();
+
+            if (profileDto is null)
+                throw new BadRequestException("Profile data is required.");
+
+            var doctorRepo = _unitOfWork.GetRepository<Doctor>();
+
+            var doctor = await doctorRepo.GetByIdAsync(new DoctorDetailsSpecification(email));
+
+            if (doctor is null)
+                throw new DoctorNotFoundException("Doctor not found.");
+
+            if (doctor.User is null)
+                throw new BadRequestException("Doctor user data is not loaded.");
+
+            ValidateProfileImage(profileDto.ProfileImage);
+
+            var oldProfileImagePath = doctor.User.ProfileImagePath;
+            string? uploadedObjectName = null;
+
+            try
+            {
+                if (profileDto.ProfileImage is not null && profileDto.ProfileImage.Length > 0)
+                {
+                    var objectName = BuildProfileImageObjectName("doctors", doctor.Id, profileDto.ProfileImage.FileName);
+
+                    uploadedObjectName = await _fileStorageService.UploadFileAsync(
+                        profileDto.ProfileImage,
+                        objectName);
+
+                    doctor.User.ProfileImagePath = uploadedObjectName;
+                }
+
+                _mapper.Map(profileDto, doctor);
+
+                doctorRepo.Update(doctor);
+
+                await _unitOfWork.SaveChangesAsync();
+
+                if (!string.IsNullOrWhiteSpace(uploadedObjectName) &&
+                    !string.IsNullOrWhiteSpace(oldProfileImagePath))
+                {
+                    try
+                    {
+                        await _fileStorageService.DeleteFileAsync(oldProfileImagePath);
+                    }
+                    catch
+                    {
+                    }
+                }
+
+                return new ServiceResponse
+                {
+                    Status = true,
+                    Message = "Profile completed successfully."
+                };
+
+            }
+            catch
+            {
+                if (!string.IsNullOrWhiteSpace(uploadedObjectName))
+                {
+                    try
+                    {
+                        await _fileStorageService.DeleteFileAsync(uploadedObjectName);
+                    }
+                    catch
+                    {
+                    }
+                }
+
+                throw;
+            }
+        }
+
+
 
         public async Task<ServiceResponse> AddWeeklyAvailabilitySlotsAsync(string email, AddWeeklyAvailabilitySlotsDto dto)
         {
@@ -436,7 +518,7 @@ namespace Services.DoctorServices
             }
             var appointments = await appointmentRepo.GetAllAsync(new DashBoardDoctorAppointmentsSpecification(doctor.Id, domainStatus));
 
-            return appointments.Select(a => new DoctorAppointmentDto
+            var Data = appointments.Select(async a => new DoctorAppointmentDto
             {
                 Id = a.Id,
 
@@ -446,6 +528,7 @@ namespace Services.DoctorServices
                 Duration = $"{(int)a.AvailabilitySlot.Duration.TotalMinutes} mins",
 
                 PatientName = a.Patient.User.DisplayName,
+                ProfileImageUrl = await _fileStorageService.GenerateReadUrlAsync(a.Patient.User.ProfileImagePath, TimeSpan.FromHours(12)),
 
                 AppointmentType = string.IsNullOrWhiteSpace(a.SessionName)
                     ? "General Consultation"
@@ -455,6 +538,7 @@ namespace Services.DoctorServices
 
                 Status = a.Status.ToString()
             });
+            return await Task.WhenAll(Data);
         }
 
         //public async Task<ServiceResponse> ConfirmAppointmentAsync(string email, int appointmentId)
@@ -905,7 +989,6 @@ namespace Services.DoctorServices
                     PatientId = p.Id,
                     DisplayName = p.User.DisplayName,
                     Email = p.User.Email ?? string.Empty,
-
                     PregnancyWeek = pregnancyWeek,
                     Trimester = GetTrimester(pregnancyWeek),
 
@@ -958,6 +1041,16 @@ namespace Services.DoctorServices
                 .Take(queryParams.PageSize)
                 .ToList();
 
+            foreach (var patientDto in pagedData)
+            {
+                var patient = patients.FirstOrDefault(p => p.Id == patientDto.PatientId);
+
+                patientDto.ProfileImageUrl = await _fileStorageService.GenerateReadUrlAsync(
+                    patient?.User.ProfileImagePath,
+                    TimeSpan.FromHours(12));
+            }
+
+
             return new PaginatedResult<DoctorPatientCardDto>(
                 queryParams.pageNumber,
                 queryParams.PageSize,
@@ -989,7 +1082,7 @@ namespace Services.DoctorServices
 
             var patientDto = _mapper.Map<DoctorPatientDto>(patient);
             patientDto.Trimester = GetTrimester(patientDto.PregnancyWeek);
-
+            patientDto.ProfileImageUrl = await _fileStorageService.GenerateReadUrlAsync(patient?.User.ProfileImagePath, TimeSpan.FromHours(12));
             return patientDto;
         }
 
@@ -1578,6 +1671,42 @@ namespace Services.DoctorServices
                 return 3;
 
             return 4;
+        }
+
+
+        private static void ValidateProfileImage(IFormFile? file)
+        {
+            if (file is null || file.Length == 0)
+                return;
+
+            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png" };
+            var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+
+            if (!allowedExtensions.Contains(extension))
+                throw new BadRequestException("Only jpg, jpeg, and png images are allowed.");
+
+            const long maxFileSize = 5 * 1024 * 1024;
+
+            if (file.Length > maxFileSize)
+                throw new BadRequestException("Profile image size must not exceed 5 MB.");
+        }
+
+        private static string BuildProfileImageObjectName(string ownerType, int ownerId, string fileName)
+        {
+            var extension = Path.GetExtension(fileName);
+            var originalName = Path.GetFileNameWithoutExtension(fileName);
+
+            var safeName = string.Concat(originalName
+                .Where(c => char.IsLetterOrDigit(c) || c == '-' || c == '_'))
+                .Trim();
+
+            if (string.IsNullOrWhiteSpace(safeName))
+                safeName = "profile-image";
+
+            var now = DateTime.Now;
+            var uniqueFileName = $"{Guid.NewGuid()}-{safeName}{extension}";
+
+            return $"profile-images/{ownerType}/{ownerId}/{now:yyyy}/{now:MM}/{uniqueFileName}";
         }
     }
 }

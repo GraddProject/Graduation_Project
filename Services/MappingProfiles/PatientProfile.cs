@@ -38,7 +38,13 @@ namespace Services.MappingProfiles
 
 
             CreateMap<CompleteMedicalProfileDto, MedicalData>()
-                .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null)); ;
+                 .ForMember(dest => dest.Age,
+                     opt => opt.Ignore())
+                 .ForMember(dest => dest.PregnancyWeek,
+                     opt => opt.Ignore())
+                 .ForAllMembers(opt => opt.Condition((src, dest, srcMember) =>
+                     srcMember is not null &&
+                     (srcMember is not string value || !string.IsNullOrWhiteSpace(value))));
         }
     }
 }

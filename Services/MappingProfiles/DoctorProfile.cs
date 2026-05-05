@@ -76,7 +76,15 @@ namespace Services.MappingProfiles
                     opt => opt.MapFrom(src => src.Appointment != null));
 
 
-
+            CreateMap<CompleteDoctorProfileDto, Doctor>()
+                .ForMember(dest => dest.Location, opt =>
+                {
+                    opt.PreCondition(src => !string.IsNullOrWhiteSpace(src.Location));
+                    opt.MapFrom(src => src.Location!.Trim());
+                })
+                .ForAllMembers(opt => opt.Condition((src, dest, srcMember) =>
+                    srcMember is not null &&
+                    (srcMember is not string value || !string.IsNullOrWhiteSpace(value))));
 
         }
     }

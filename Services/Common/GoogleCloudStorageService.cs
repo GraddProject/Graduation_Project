@@ -55,6 +55,7 @@ namespace Services.Common
     public class GoogleCloudStorageService : IFileStorageService
     {
         private readonly StorageClient _storageClient;
+        private readonly UrlSigner _urlSigner;
         private readonly string _bucketName;
 
         public GoogleCloudStorageService(IConfiguration configuration)
@@ -64,15 +65,19 @@ namespace Services.Common
 
             var credentialsPath = configuration["GoogleCloud:CredentialsPath"];
 
+            GoogleCredential credential;
+
             if (!string.IsNullOrWhiteSpace(credentialsPath) && File.Exists(credentialsPath))
             {
-                var credential = Google.Apis.Auth.OAuth2.GoogleCredential.FromFile(credentialsPath);
-                _storageClient = StorageClient.Create(credential);
+                credential = GoogleCredential.FromFile(credentialsPath);
             }
             else
             {
-                _storageClient = StorageClient.Create();
+                credential = GoogleCredential.GetApplicationDefault();
             }
+
+            _storageClient = StorageClient.Create(credential);
+            _urlSigner = UrlSigner.FromCredential(credential);
         }
 
 
@@ -109,6 +114,19 @@ namespace Services.Common
                     ? "application/octet-stream"
                     : storageObject.ContentType
             };
+        }
+
+
+        public async Task<string?> GenerateReadUrlAsync(string? objectName, TimeSpan? duration = null)
+        {
+            if (string.IsNullOrWhiteSpace(objectName))
+                return null;
+
+            return await _urlSigner.SignAsync(
+                bucket: _bucketName,
+                objectName: objectName,
+                duration: duration ?? TimeSpan.FromHours(12),
+                httpMethod: System.Net.Http.HttpMethod.Get);
         }
     }
 }
