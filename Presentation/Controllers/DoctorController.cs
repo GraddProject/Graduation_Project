@@ -32,7 +32,15 @@ namespace Presentation.Controllers
         }
 
 
+        [HttpGet("profile")]
+        public async Task<ActionResult<DoctorProfileDto>> GetDoctorProfile()
+        {
+            var email = User.FindFirstValue(ClaimTypes.Email);
 
+            var result = await _serviceManger.DoctorService.GetDoctorProfileAsync(email);
+
+            return Ok(result);
+        }
 
         [HttpPost("predict")]
         public async Task<ActionResult<PredictionResponseDto>> Predict([FromBody] PredictionRequestDto request)

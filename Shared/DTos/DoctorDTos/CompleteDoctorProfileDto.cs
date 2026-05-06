@@ -9,8 +9,12 @@ namespace Shared.DTos.DoctorDTos
 {
     public class CompleteDoctorProfileDto
     {
-        public string? Location { get; set; }
-
         public IFormFile? ProfileImage { get; set; }
+        public string? Location { get; set; }
+        public int? YearsOfExperience { get; set; }
+
+        public List<string>? Specializations { get; set; }
+
+
     }
 }

@@ -12,11 +12,11 @@ namespace DomainLayer.Models
         public int Id { get; set; }
 
 
-        public int YearsOfExperience { get; set; }
+        public int? YearsOfExperience { get; set; }
 
         public string UserId { get; set; }
         public string? Location { get; set; }
-
+        public List<string>? Specializations { get; set; } = [];
         public ApplicationUser User { get; set; } = default!;
 
 

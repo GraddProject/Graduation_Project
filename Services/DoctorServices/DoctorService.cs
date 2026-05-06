@@ -50,6 +50,7 @@ namespace Services.DoctorServices
 
             ValidateProfileImage(profileDto.ProfileImage);
 
+
             var oldProfileImagePath = doctor.User.ProfileImagePath;
             string? uploadedObjectName = null;
 
@@ -67,6 +68,12 @@ namespace Services.DoctorServices
                 }
 
                 _mapper.Map(profileDto, doctor);
+
+                if (profileDto.Specializations is not null)
+                {
+                    var specializations = NormalizeDoctorSpecializations(profileDto.Specializations);
+                    doctor.Specializations = specializations;
+                }
 
                 doctorRepo.Update(doctor);
 
@@ -108,7 +115,46 @@ namespace Services.DoctorServices
             }
         }
 
+        public async Task<DoctorProfileDto> GetDoctorProfileAsync(string email)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+                throw new UnauthorizedException();
 
+            var doctorRepo = _unitOfWork.GetRepository<Doctor>();
+            var patientRepo = _unitOfWork.GetRepository<Patient>();
+
+            var doctor = await doctorRepo.GetByIdAsync(new DoctorDetailsSpecification(email));
+
+            if (doctor is null)
+                throw new DoctorNotFoundException("Doctor not found.");
+
+            if (doctor.User is null)
+                throw new BadRequestException("Doctor user data is not loaded.");
+
+            var patients = await patientRepo.GetAllAsync(
+                new DoctorPatientsCardsSpecification(doctor.Id));
+
+            return new DoctorProfileDto
+            {
+                DoctorId = doctor.Id,
+
+                DisplayName = doctor.User.DisplayName,
+                Email = doctor.User.Email ?? string.Empty,
+                PhoneNumber = doctor.User.PhoneNumber,
+
+                Location = doctor.Location,
+                Status = doctor.User.EmailConfirmed ? "Active" : "Not Active",
+
+                YearsOfExperience = doctor.YearsOfExperience,
+                PatientsCount = patients.Count(),
+
+                ProfileImageUrl = await _fileStorageService.GenerateReadUrlAsync(
+                    doctor.User.ProfileImagePath,
+                    TimeSpan.FromHours(12)),
+
+                Specializations = doctor.Specializations ?? []
+            };
+        }
 
         public async Task<ServiceResponse> AddWeeklyAvailabilitySlotsAsync(string email, AddWeeklyAvailabilitySlotsDto dto)
         {
@@ -1707,6 +1753,27 @@ namespace Services.DoctorServices
             var uniqueFileName = $"{Guid.NewGuid()}-{safeName}{extension}";
 
             return $"profile-images/{ownerType}/{ownerId}/{now:yyyy}/{now:MM}/{uniqueFileName}";
+        }
+
+
+        private static List<string> NormalizeDoctorSpecializations(IEnumerable<string>? specializations)
+        {
+            if (specializations is null)
+                return [];
+
+            var normalizedSpecializations = specializations
+                .Where(s => !string.IsNullOrWhiteSpace(s))
+                .Select(s => s.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            if (normalizedSpecializations.Count > 6)
+                throw new BadRequestException("Doctor specializations must not exceed 6 items.");
+
+            if (normalizedSpecializations.Any(s => s.Length > 40))
+                throw new BadRequestException("Doctor specialization must not exceed 40 characters.");
+
+            return normalizedSpecializations;
         }
     }
 }

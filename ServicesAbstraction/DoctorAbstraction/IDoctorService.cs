@@ -20,6 +20,8 @@ namespace ServicesAbstraction.DoctorAbstraction
 
 
         Task<ServiceResponse> CompleteProfileAsync(string email, CompleteDoctorProfileDto profileDto);
+
+        Task<DoctorProfileDto> GetDoctorProfileAsync(string email);
         public Task<IEnumerable<DoctorPatientDto>> GetAllPatientsAsync(string Email);
 
         Task<DoctorPatientDto> GetPatientByIdAsync(string Email,int patientId);
