@@ -414,9 +414,7 @@ namespace Services.DoctorServices
 
 
 
-
-
-        public async Task<IEnumerable<DoctorAvailabilityOverviewDto>> GetAvailabilityOverviewAsync(string email, AvailabilityOverviewQueryParams? queryParams = null)
+        public async Task<IEnumerable<DoctorAvailabilityOverviewDto>> GetAvailabilityOverviewAsync(string email,AvailabilityOverviewQueryParams? queryParams = null)
         {
             if (string.IsNullOrWhiteSpace(email))
                 throw new UnauthorizedException();
@@ -443,7 +441,11 @@ namespace Services.DoctorServices
             var filteredSlots = slots.Where(slot =>
             {
                 var isBooked = IsBooked(slot);
-                var isAvailable = slot.Appointment is null;
+
+                var isExpired = slot.Appointment is null &&
+                                slot.StartAt.Add(slot.Duration) <= DateTime.Now;
+
+                var isAvailable = slot.Appointment is null && !isExpired;
 
                 if (queryParams.Status == AvailabilitySlotFilterDto.Booked && !isBooked)
                     return false;
@@ -451,7 +453,10 @@ namespace Services.DoctorServices
                 if (queryParams.Status == AvailabilitySlotFilterDto.Available && !isAvailable)
                     return false;
 
-                if (queryParams.Status == AvailabilitySlotFilterDto.All && !isBooked && !isAvailable)
+                if (queryParams.Status == AvailabilitySlotFilterDto.All &&
+                    !isBooked &&
+                    !isAvailable &&
+                    !isExpired)
                     return false;
 
                 if (queryParams.Type.HasValue &&
@@ -478,31 +483,42 @@ namespace Services.DoctorServices
             });
 
             return filteredSlots
-                    .OrderBy(slot => slot.StartAt)
-                    .Select(slot =>
-            {
-                var startAt = slot.StartAt;
-                var endAt = slot.StartAt.Add(slot.Duration);
-                var isBooked = IsBooked(slot);
-
-                return new DoctorAvailabilityOverviewDto
+                .OrderBy(slot => slot.StartAt)
+                .Select(slot =>
                 {
-                    Id = slot.Id,
+                    var startAt = slot.StartAt;
+                    var endAt = slot.StartAt.Add(slot.Duration);
 
-                    Date = startAt.ToString("yyyy-MM-dd"),
-                    DateLabel = startAt.ToString("ddd, MMM dd"),
-                    Time = $"{startAt:hh:mm tt} - {endAt:hh:mm tt}",
-                    Duration = $"{(int)slot.Duration.TotalMinutes} min",
+                    var isBooked = IsBooked(slot);
 
-                    VisitType = slot.Type.ToString(),
-                    BookingStatus = isBooked ? "Booked" : "Available",
+                    var isExpired = slot.Appointment is null &&
+                                    slot.StartAt.Add(slot.Duration) <= DateTime.Now;
 
-                    AppointmentStatus = isBooked
-                        ? slot.Appointment!.Status.ToString()
-                        : null
-                };
-            });
+                    return new DoctorAvailabilityOverviewDto
+                    {
+                        Id = slot.Id,
+
+                        Date = startAt.ToString("yyyy-MM-dd"),
+                        DateLabel = startAt.ToString("ddd, MMM dd"),
+                        Time = $"{startAt:hh:mm tt} - {endAt:hh:mm tt}",
+                        Duration = $"{(int)slot.Duration.TotalMinutes} min",
+
+                        VisitType = slot.Type.ToString(),
+
+                        BookingStatus = isBooked
+                            ? "Booked"
+                            : isExpired
+                                ? "Expired"
+                                : "Available",
+
+                        AppointmentStatus = isBooked
+                            ? slot.Appointment!.Status.ToString()
+                            : null
+                    };
+                });
         }
+
+
 
 
         public async Task<IEnumerable<AvailabilitySlotDto>> GetMyAvailabilitySlotsAsync(string Email)
@@ -1490,7 +1506,8 @@ namespace Services.DoctorServices
 
 
 
-        public async Task<DoctorDashboardOverviewDto> GetDoctorDashboardOverviewAsync(string Email)
+
+        public async Task<DoctorDashboardOverviewDto> GetDoctorDashboardOverviewAsync(string Email,DoctorDashboardDateFilterDto dateFilter = DoctorDashboardDateFilterDto.ThisMonth)
         {
             if (string.IsNullOrWhiteSpace(Email))
                 throw new UnauthorizedException();
@@ -1507,8 +1524,7 @@ namespace Services.DoctorServices
             await CompleteExpiredConfirmedAppointmentsForDoctorAsync(doctor.Id);
 
             var now = DateTime.Now;
-            var monthStart = new DateTime(now.Year, now.Month, 1);
-            var nextMonthStart = monthStart.AddMonths(1);
+            var dateRange = GetDashboardDateRange(dateFilter);
 
             var appointments = await appointmentRepo.GetAllAsync(
                 new DoctorAppointmentsSummarySpecification(doctor.Id));
@@ -1516,8 +1532,8 @@ namespace Services.DoctorServices
             var monthlyAppointments = appointments
                 .Where(a =>
                     a.AvailabilitySlot is not null &&
-                    a.AvailabilitySlot.StartAt >= monthStart &&
-                    a.AvailabilitySlot.StartAt < nextMonthStart)
+                    a.AvailabilitySlot.StartAt >= dateRange.Start &&
+                    a.AvailabilitySlot.StartAt < dateRange.End)
                 .ToList();
 
             var confirmedCount = monthlyAppointments.Count(a =>
@@ -1532,28 +1548,35 @@ namespace Services.DoctorServices
 
             var totalAppointments = confirmedCount + completedCount + canceledCount;
 
-            var slots = await SlotRepo.GetAllAsync(new DoctorAvailabilitySlotsSpecification(doctor.Id));
+            var slots = await SlotRepo.GetAllAsync(
+                new DoctorAvailabilitySlotsSpecification(doctor.Id));
 
             var slotsList = slots
                 .Where(s =>
-                    s.StartAt >= monthStart &&
-                    s.StartAt < nextMonthStart)
+                    s.StartAt >= dateRange.Start &&
+                    s.StartAt < dateRange.End)
                 .ToList();
 
-            var bookedSlots = slotsList
-                .Where(s =>
-                    s.Appointment is not null &&
-                    (
-                        s.Appointment.Status == AppointmentStatus.Confirmed ||
-                        s.Appointment.Status == AppointmentStatus.ReschedulePending
-                    ))
+            var activeSlots = slotsList
+                .Where(s => s.StartAt.Add(s.Duration) > now)
                 .ToList();
 
-            var availableSlots = slotsList
+            var bookedSlots = activeSlots
+                .Where(IsBooked)
+                .ToList();
+
+            var availableSlots = activeSlots
                 .Where(s => s.Appointment is null)
                 .ToList();
 
-            var totalSlots = bookedSlots.Count + availableSlots.Count;
+            var expiredSlots = slotsList
+                .Where(s =>
+                    s.Appointment is null &&
+                    s.StartAt.Add(s.Duration) <= now)
+                .ToList();
+
+            var totalActiveSlots = bookedSlots.Count + availableSlots.Count;
+
             return new DoctorDashboardOverviewDto
             {
                 AppointmentOverview = new DoctorAppointmentOverviewDto
@@ -1579,17 +1602,17 @@ namespace Services.DoctorServices
 
                 Availability = new DoctorAvailabilityDashboardDto
                 {
-                    BookedPercentage = CalculatePercentage(bookedSlots.Count, totalSlots),
+                    BookedPercentage = CalculatePercentage(bookedSlots.Count, totalActiveSlots),
 
                     BookedSlots = bookedSlots.Count,
                     AvailableSlots = availableSlots.Count,
+                    ExpiredSlots = expiredSlots.Count,
 
                     OnlineBookedSlots = bookedSlots.Count(s => s.Type == AppointmentType.Online),
                     OfflineBookedSlots = bookedSlots.Count(s => s.Type == AppointmentType.Offline)
                 }
             };
         }
-
 
 
 
@@ -1775,5 +1798,24 @@ namespace Services.DoctorServices
 
             return normalizedSpecializations;
         }
+
+
+        private static (DateTime Start, DateTime End) GetDashboardDateRange(DoctorDashboardDateFilterDto dateFilter)
+        {
+            var now = DateTime.Now;
+            var thisMonthStart = new DateTime(now.Year, now.Month, 1);
+
+            return dateFilter switch
+            {
+                DoctorDashboardDateFilterDto.ThisMonth =>
+                    (thisMonthStart, thisMonthStart.AddMonths(1)),
+
+                DoctorDashboardDateFilterDto.LastMonth =>
+                    (thisMonthStart.AddMonths(-1), thisMonthStart),
+
+                _ => throw new BadRequestException("Invalid dashboard date filter.")
+            };
+        }
+
     }
 }

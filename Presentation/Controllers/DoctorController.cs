@@ -359,12 +359,12 @@ namespace Presentation.Controllers
 
 
         [HttpGet("DashboardAppointmentAndAvailabiltyOverviewOnThisMonth")]
-        public async Task<ActionResult<DoctorDashboardOverviewDto>> GetDashboardOverview()
+        public async Task<ActionResult<DoctorDashboardOverviewDto>> GetDashboardOverview([FromQuery] DoctorDashboardDateFilterDto dateFilter = DoctorDashboardDateFilterDto.ThisMonth)
         {
             var email = User.FindFirstValue(ClaimTypes.Email);
 
             var result = await _serviceManger.DoctorService
-                .GetDoctorDashboardOverviewAsync(email!);
+                .GetDoctorDashboardOverviewAsync(email!, dateFilter);
 
             return Ok(result);
         }

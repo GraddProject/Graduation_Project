@@ -31,6 +31,7 @@ namespace Shared.DTos.AppointmentDTos
 
         public int BookedSlots { get; set; }
         public int AvailableSlots { get; set; }
+        public int ExpiredSlots { get; set; }
 
         public int OnlineBookedSlots { get; set; }
         public int OfflineBookedSlots { get; set; }

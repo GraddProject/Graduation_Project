@@ -227,7 +227,7 @@ namespace Services.PatientServices
                 throw new SlotNotFoundException(dto.SlotId);
 
             if (slot.StartAt <= DateTime.Now)
-                throw new BadRequestException("Cannot book a slot in the past.");
+                throw new BadRequestException("This slot is no longer available.");
 
             if (slot.Appointment is not null)
                 throw new BadRequestException("This slot is already booked.");

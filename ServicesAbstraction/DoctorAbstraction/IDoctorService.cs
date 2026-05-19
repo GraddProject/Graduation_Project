@@ -76,7 +76,7 @@ namespace ServicesAbstraction.DoctorAbstraction
 
         Task<PaginatedResult<DoctorPatientCardDto>> GetAllPatientsAsync(string Email, DoctorPatientsQueryParams queryParams);
 
-        Task<DoctorDashboardOverviewDto> GetDoctorDashboardOverviewAsync(string Email);
+        Task<DoctorDashboardOverviewDto> GetDoctorDashboardOverviewAsync(string Email,DoctorDashboardDateFilterDto dateFilter = DoctorDashboardDateFilterDto.ThisMonth);
 
     }
 }
