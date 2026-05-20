@@ -5,6 +5,7 @@ using ServicesAbstraction;
 using Shared.DTos.AppointmentDTos;
 using Shared.DTos.MedicalTestDTos;
 using Shared.DTos.PatientDTos;
+using Shared.DTos.ZoomDTos;
 using Shared.ErrorModels;
 using System;
 using System.Collections.Generic;
@@ -173,6 +174,17 @@ namespace Presentation.Controllers
             return Ok(result);
         }
 
+
+        [HttpGet("appointments/{appointmentId:int}/online-session")]
+        public async Task<ActionResult<OnlineSessionLinkDto>> GetOnlineSessionLink(int appointmentId)
+        {
+            var email = User.FindFirstValue(ClaimTypes.Email);
+
+            var result = await _serviceManger.PatientService
+                .GetPatientOnlineSessionLinkAsync(email!, appointmentId);
+
+            return Ok(result);
+        }
 
         //#region
         //[HttpGet("GetMyMedicalTests")]

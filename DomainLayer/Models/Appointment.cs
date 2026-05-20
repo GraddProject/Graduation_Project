@@ -22,6 +22,14 @@ namespace DomainLayer.Models
 
         public AppointmentStatus Status { get; set; } = AppointmentStatus.Confirmed;
 
+        public string? OnlineMeetingProvider { get; set; }
+        public long? ZoomMeetingId { get; set; }
+        public string? ZoomJoinUrl { get; set; }
+        public string? ZoomStartUrl { get; set; }
+        public string? ZoomPassword { get; set; }
+        public DateTime? ZoomCreatedAt { get; set; }
+        public DateTime? ZoomUpdatedAt { get; set; }
+
         public DateTime CreatedAt { get; set; }
     }
 }

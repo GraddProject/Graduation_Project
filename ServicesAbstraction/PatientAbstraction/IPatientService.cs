@@ -1,6 +1,7 @@
 ﻿using Shared.DTos.AppointmentDTos;
 using Shared.DTos.MedicalTestDTos;
 using Shared.DTos.PatientDTos;
+using Shared.DTos.ZoomDTos;
 using Shared.ErrorModels;
 using System;
 using System.Collections.Generic;
@@ -17,7 +18,7 @@ namespace ServicesAbstraction.PatientAbstraction
         public Task<IEnumerable<AvailabilitySlotDto>> GetAllSlotsAsync(string Email);
 
 
-        Task<IEnumerable<PatientAppointmentDto>> GetMyAppointmentsAsync(string email,AppointmentStatusDto? status = null);
+        Task<IEnumerable<PatientAppointmentDto>> GetMyAppointmentsAsync(string email, AppointmentStatusDto? status = null);
 
         Task<ServiceResponse> BookAppointmentAsync(string Email, BookAppointmentDto bookAppointmentDto);
 
@@ -37,5 +38,6 @@ namespace ServicesAbstraction.PatientAbstraction
         Task<IEnumerable<MedicalTestListDto>> GetMyMedicalTestsAsync(string userId);
         Task<MedicalTestFileDto> ViewMedicalTestAsync(string userId, int medicalTestId);
         Task<ServiceResponse> DeleteMedicalTestAsync(string userId, int medicalTestId);
+        Task<OnlineSessionLinkDto> GetPatientOnlineSessionLinkAsync(string email, int appointmentId);
     }
 }

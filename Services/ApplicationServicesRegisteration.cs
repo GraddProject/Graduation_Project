@@ -8,6 +8,7 @@ using Services.DoctorServices;
 using Services.ModelServices;
 using Services.NotificationServices;
 using Services.PatientServices;
+using Services.ZoomServices;
 using ServicesAbstraction;
 using ServicesAbstraction.AuthServices;
 using ServicesAbstraction.Common;
@@ -16,6 +17,7 @@ using ServicesAbstraction.IAdminAbstraction;
 using ServicesAbstraction.ModelAbstraction;
 using ServicesAbstraction.NotificationAbstraction;
 using ServicesAbstraction.PatientAbstraction;
+using ServicesAbstraction.ZoomAbstraction;
 using Shared.DTos.MlDTos;
 using System;
 using System.Collections.Generic;
@@ -56,6 +58,31 @@ namespace Services
 
 
             Services.AddScoped<IFileStorageService, GoogleCloudStorageService>();
+
+
+
+
+            Services.AddMemoryCache();
+
+            Services.AddOptions<ZoomOptions>()
+                .BindConfiguration("Zoom")
+                .ValidateDataAnnotations()
+                .Validate(options =>
+                    !string.IsNullOrWhiteSpace(options.AccountId) &&
+                    !string.IsNullOrWhiteSpace(options.ClientId) &&
+                    !string.IsNullOrWhiteSpace(options.ClientSecret) &&
+                    !string.IsNullOrWhiteSpace(options.HostUserId),
+                    "Zoom configuration is missing.")
+                .ValidateOnStart();
+
+            Services.AddHttpClient<IZoomMeetingService, ZoomMeetingService>(client =>
+            {
+                client.Timeout = TimeSpan.FromSeconds(30);
+            });
+
+
+
+
 
 
             Services.AddHttpClient<IModelPredictionService, ModelPredictionService>((sp, client) =>

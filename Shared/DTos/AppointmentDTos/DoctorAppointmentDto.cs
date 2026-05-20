@@ -24,5 +24,9 @@ namespace Shared.DTos.AppointmentDTos
         public string VisitType { get; set; }
 
         public string Status { get; set; }
+
+        public bool IsOnline { get; set; }
+        public bool CanStartOnlineSession { get; set; }
+        public string? OnlineSessionUrl { get; set; }
     }
 }

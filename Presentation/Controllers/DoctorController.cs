@@ -11,6 +11,7 @@ using Shared.DTos.MlDTos;
 using Shared.DTos.PaginationDTo;
 using Shared.DTos.PaginationDTo.DoctorDashBoardDTos;
 using Shared.DTos.PredictionDTos;
+using Shared.DTos.ZoomDTos;
 using Shared.ErrorModels;
 using System.Security.Claims;
 
@@ -376,6 +377,17 @@ namespace Presentation.Controllers
             var email = User.FindFirstValue(ClaimTypes.Email);
 
             var result = await _serviceManger.DoctorService.GetAllPatientsAsync(email!, queryParams);
+
+            return Ok(result);
+        }
+
+        [HttpGet("appointments/{appointmentId:int}/online-session/start")]
+        public async Task<ActionResult<OnlineSessionStartDto>> GetOnlineSessionStartLink(int appointmentId)
+        {
+            var email = User.FindFirstValue(ClaimTypes.Email);
+
+            var result = await _serviceManger.DoctorService
+                .GetDoctorOnlineSessionStartLinkAsync(email!, appointmentId);
 
             return Ok(result);
         }

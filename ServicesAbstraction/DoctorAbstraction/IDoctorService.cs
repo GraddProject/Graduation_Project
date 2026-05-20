@@ -5,6 +5,7 @@ using Shared.DTos.MedicalHistoryDTos;
 using Shared.DTos.MedicalTestDTos;
 using Shared.DTos.PaginationDTo;
 using Shared.DTos.PaginationDTo.DoctorDashBoardDTos;
+using Shared.DTos.ZoomDTos;
 using Shared.ErrorModels;
 using System;
 using System.Collections.Generic;
@@ -78,5 +79,7 @@ namespace ServicesAbstraction.DoctorAbstraction
 
         Task<DoctorDashboardOverviewDto> GetDoctorDashboardOverviewAsync(string Email,DoctorDashboardDateFilterDto dateFilter = DoctorDashboardDateFilterDto.ThisMonth);
 
+
+        Task<OnlineSessionStartDto> GetDoctorOnlineSessionStartLinkAsync(string email, int appointmentId);
     }
 }

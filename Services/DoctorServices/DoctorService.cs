@@ -12,6 +12,7 @@ using Services.Specifications.PreScriptionSpecifications;
 using ServicesAbstraction.Common;
 using ServicesAbstraction.DoctorAbstraction;
 using ServicesAbstraction.NotificationAbstraction;
+using ServicesAbstraction.ZoomAbstraction;
 using Shared.DTos.AppointmentDTos;
 using Shared.DTos.DoctorDTos;
 using Shared.DTos.MedicalHistoryDTos;
@@ -20,6 +21,7 @@ using Shared.DTos.NotificationDTos;
 using Shared.DTos.PaginationDTo;
 using Shared.DTos.PaginationDTo.DoctorDashBoardDTos;
 using Shared.DTos.PatientDTos;
+using Shared.DTos.ZoomDTos;
 using Shared.ErrorModels;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 using AppointmentType = DomainLayer.Models.AppointmentType;
@@ -27,7 +29,8 @@ using AppointmentType = DomainLayer.Models.AppointmentType;
 namespace Services.DoctorServices
 {
     public class DoctorService(IUnitOfWork _unitOfWork, IMapper _mapper, IFileStorageService _fileStorageService,
-                                INotificationService _notificationService) : IDoctorService
+                                INotificationService _notificationService,
+                                IZoomMeetingService _zoomMeetingService) : IDoctorService
     {
 
         public async Task<ServiceResponse> CompleteProfileAsync(string email, CompleteDoctorProfileDto profileDto)
@@ -414,7 +417,7 @@ namespace Services.DoctorServices
 
 
 
-        public async Task<IEnumerable<DoctorAvailabilityOverviewDto>> GetAvailabilityOverviewAsync(string email,AvailabilityOverviewQueryParams? queryParams = null)
+        public async Task<IEnumerable<DoctorAvailabilityOverviewDto>> GetAvailabilityOverviewAsync(string email, AvailabilityOverviewQueryParams? queryParams = null)
         {
             if (string.IsNullOrWhiteSpace(email))
                 throw new UnauthorizedException();
@@ -598,7 +601,12 @@ namespace Services.DoctorServices
 
                 VisitType = a.AvailabilitySlot.Type.ToString(),
 
-                Status = a.Status.ToString()
+                Status = a.Status.ToString(),
+                IsOnline = a.AvailabilitySlot.Type == DomainLayer.Models.AppointmentType.Online,
+                CanStartOnlineSession = CanUseOnlineSession(a),
+                OnlineSessionUrl = a.AvailabilitySlot.Type == DomainLayer.Models.AppointmentType.Online ? a.ZoomStartUrl : null
+
+
             });
             return await Task.WhenAll(Data);
         }
@@ -673,6 +681,7 @@ namespace Services.DoctorServices
             if (appointment.Status == AppointmentStatus.Completed)
                 throw new BadRequestException("Completed appointments cannot be canceled.");
 
+            await DeleteZoomMeetingIfExistsAsync(appointment);
             appointment.Status = AppointmentStatus.Canceled;
 
             appointmentRepo.Update(appointment);
@@ -753,6 +762,36 @@ namespace Services.DoctorServices
                 throw new BadRequestException(new List<string> { "This time overlaps with another slot." });
 
             var oldStartAt = currentSlot.StartAt;
+
+            var oldType = currentSlot.Type;
+
+            if (oldType == DomainLayer.Models.AppointmentType.Online &&
+                domainType == DomainLayer.Models.AppointmentType.Online &&
+                appointment.ZoomMeetingId.HasValue)
+            {
+                await _zoomMeetingService.UpdateMeetingAsync(
+                    appointment.ZoomMeetingId.Value,
+                    BuildZoomTopic(appointment.SessionName, appointment.Patient.User.DisplayName),
+                    dto.NewStartAt,
+                    newDuration);
+
+                appointment.ZoomUpdatedAt = DateTime.Now;
+            }
+            else if (oldType == DomainLayer.Models.AppointmentType.Offline &&
+                     domainType == DomainLayer.Models.AppointmentType.Online)
+            {
+                var zoomMeeting = await _zoomMeetingService.CreateMeetingAsync(
+                    BuildZoomTopic(appointment.SessionName, appointment.Patient.User.DisplayName),
+                    dto.NewStartAt,
+                    newDuration);
+
+                ApplyZoomMeeting(appointment, zoomMeeting);
+            }
+            else if (oldType == DomainLayer.Models.AppointmentType.Online &&
+                     domainType == DomainLayer.Models.AppointmentType.Offline)
+            {
+                await DeleteZoomMeetingIfExistsAsync(appointment);
+            }
 
             currentSlot.StartAt = dto.NewStartAt;
             currentSlot.Duration = newDuration;
@@ -1507,7 +1546,7 @@ namespace Services.DoctorServices
 
 
 
-        public async Task<DoctorDashboardOverviewDto> GetDoctorDashboardOverviewAsync(string Email,DoctorDashboardDateFilterDto dateFilter = DoctorDashboardDateFilterDto.ThisMonth)
+        public async Task<DoctorDashboardOverviewDto> GetDoctorDashboardOverviewAsync(string Email, DoctorDashboardDateFilterDto dateFilter = DoctorDashboardDateFilterDto.ThisMonth)
         {
             if (string.IsNullOrWhiteSpace(Email))
                 throw new UnauthorizedException();
@@ -1614,6 +1653,67 @@ namespace Services.DoctorServices
             };
         }
 
+
+        public async Task<OnlineSessionStartDto> GetDoctorOnlineSessionStartLinkAsync(string email, int appointmentId)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+                throw new UnauthorizedException();
+
+            var doctorRepo = _unitOfWork.GetRepository<Doctor>();
+            var appointmentRepo = _unitOfWork.GetRepository<Appointment>();
+
+            var doctor = await doctorRepo.GetByIdAsync(new DoctorDetailsSpecification(email));
+
+            if (doctor is null)
+                throw new DoctorNotFoundException("Doctor not found.");
+
+            var appointment = await appointmentRepo.GetByIdAsync(
+                new DoctorAppointmentByIdSpecification(doctor.Id, appointmentId));
+
+            if (appointment is null)
+                throw new BadRequestException("Appointment not found or does not belong to this doctor.");
+
+            if (appointment.Status != AppointmentStatus.Confirmed)
+                throw new BadRequestException("Only confirmed appointments can be started online.");
+
+            if (appointment.AvailabilitySlot is null ||
+                appointment.AvailabilitySlot.Type != DomainLayer.Models.AppointmentType.Online)
+                throw new BadRequestException("This appointment is not an online session.");
+
+            if (appointment.AvailabilitySlot.StartAt.Add(appointment.AvailabilitySlot.Duration) <= DateTime.Now)
+                throw new BadRequestException("This online session has already ended.");
+
+            if (!appointment.ZoomMeetingId.HasValue)
+                throw new BadRequestException("Zoom meeting is not available for this appointment.");
+
+            var freshMeeting = await _zoomMeetingService.GetMeetingAsync(appointment.ZoomMeetingId.Value);
+
+            if (freshMeeting is not null)
+            {
+                appointment.ZoomJoinUrl = freshMeeting.JoinUrl;
+                appointment.ZoomPassword = freshMeeting.Password;
+
+                if (!string.IsNullOrWhiteSpace(freshMeeting.StartUrl))
+                    appointment.ZoomStartUrl = freshMeeting.StartUrl;
+
+                appointment.ZoomUpdatedAt = DateTime.Now;
+                appointmentRepo.Update(appointment);
+                await _unitOfWork.SaveChangesAsync();
+            }
+
+            if (string.IsNullOrWhiteSpace(appointment.ZoomStartUrl))
+                throw new BadRequestException("Zoom start link is not available for this appointment.");
+
+            return new OnlineSessionStartDto
+            {
+                AppointmentId = appointment.Id,
+                StartUrl = appointment.ZoomStartUrl,
+                Password = appointment.ZoomPassword,
+                StartAt = appointment.AvailabilitySlot.StartAt,
+                DurationMinutes = (int)appointment.AvailabilitySlot.Duration.TotalMinutes,
+                CanStartNow = CanUseOnlineSession(appointment)
+            };
+        }
 
 
         private static bool IsOverlapping(DateTime firstStart, TimeSpan firstDuration, DateTime secondStart, TimeSpan secondDuration)
@@ -1817,5 +1917,63 @@ namespace Services.DoctorServices
             };
         }
 
+
+
+        private static string BuildZoomTopic(string sessionName, string patientName)
+        {
+            var safeSessionName = string.IsNullOrWhiteSpace(sessionName)
+                ? "General Consultation"
+                : sessionName.Trim();
+
+            var safePatientName = string.IsNullOrWhiteSpace(patientName)
+                ? "Patient"
+                : patientName.Trim();
+
+            return $"HerJourney - {safeSessionName} - {safePatientName}";
+        }
+
+        private static void ApplyZoomMeeting(Appointment appointment, ZoomMeetingResult zoomMeeting)
+        {
+            appointment.OnlineMeetingProvider = "Zoom";
+            appointment.ZoomMeetingId = zoomMeeting.Id;
+            appointment.ZoomJoinUrl = zoomMeeting.JoinUrl;
+            appointment.ZoomStartUrl = zoomMeeting.StartUrl;
+            appointment.ZoomPassword = zoomMeeting.Password;
+            appointment.ZoomCreatedAt = DateTime.Now;
+            appointment.ZoomUpdatedAt = DateTime.Now;
+        }
+
+        private static void ClearZoomMeeting(Appointment appointment)
+        {
+            appointment.OnlineMeetingProvider = null;
+            appointment.ZoomMeetingId = null;
+            appointment.ZoomJoinUrl = null;
+            appointment.ZoomStartUrl = null;
+            appointment.ZoomPassword = null;
+            appointment.ZoomUpdatedAt = DateTime.Now;
+        }
+
+        private async Task DeleteZoomMeetingIfExistsAsync(Appointment appointment)
+        {
+            if (appointment.ZoomMeetingId.HasValue)
+            {
+                await _zoomMeetingService.DeleteMeetingAsync(appointment.ZoomMeetingId.Value);
+                ClearZoomMeeting(appointment);
+            }
+        }
+
+        private static bool CanUseOnlineSession(Appointment appointment)
+        {
+            if (appointment.AvailabilitySlot is null ||
+                appointment.AvailabilitySlot.Type != DomainLayer.Models.AppointmentType.Online ||
+                appointment.Status != AppointmentStatus.Confirmed)
+                return false;
+
+            var now = DateTime.Now;
+            var startAt = appointment.AvailabilitySlot.StartAt;
+            var endAt = startAt.Add(appointment.AvailabilitySlot.Duration);
+
+            return now >= startAt.AddMinutes(-15) && now <= endAt;
+        }
     }
 }
