@@ -20,18 +20,26 @@ namespace Presentation.Controllers
     public class PatientController(IServiceManger _serviceManger) : ApiBaseController
     {
 
-        [HttpGet("debug-time")]
-        public IActionResult DebugTime()
+        //[HttpGet("debug-time")]
+        //public IActionResult DebugTime()
+        //{
+        //    return Ok(new
+        //    {
+        //        ServerNow = DateTime.Now,
+        //        ServerUtcNow = DateTime.UtcNow,
+        //        LocalTimeZone = TimeZoneInfo.Local.Id,
+        //        LocalOffset = TimeZoneInfo.Local.GetUtcOffset(DateTime.Now).ToString()
+        //    });
+        //}
+        [HttpGet("Profile")]
+        public async Task<ActionResult<PatientDashboardProfileDto>> GetMyDashboardProfile()
         {
-            return Ok(new
-            {
-                ServerNow = DateTime.Now,
-                ServerUtcNow = DateTime.UtcNow,
-                LocalTimeZone = TimeZoneInfo.Local.Id,
-                LocalOffset = TimeZoneInfo.Local.GetUtcOffset(DateTime.Now).ToString()
-            });
-        }
+            var email = User.FindFirstValue(ClaimTypes.Email);
 
+            var result = await _serviceManger.PatientService.GetMyDashboardProfileAsync(email!);
+
+            return Ok(result);
+        }
 
 
 

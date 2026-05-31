@@ -12,11 +12,17 @@ namespace ServicesAbstraction.ModelAbstraction
     {
         Task<PredictionResponseDto> PredictAsync(PredictionRequestDto request);
 
-        Task<SavedPredictionResponseDto> CreateGdmPredictionAsync(string email,CreateGdmPredictionDto request);
+        Task<SavedPredictionResponseDto> CreateGdmPredictionAsync(string email, CreateGdmPredictionDto request);
 
         Task<IEnumerable<PredictionInsightDto>> GetDoctorPredictionInsightsAsync(string email);
 
         Task<PredictionDetailsDto> GetPredictionDetailsAsync(string email, int predictionRecordId);
 
+
+
+        Task<IEnumerable<PredictionRiskDashboardDto>> GetPredictionRiskDashboardAsync(string email);
+
+
+        Task<IEnumerable<PatientPredictionHistoryDto>> GetPatientPredictionHistoryAsync(string email, int patientId);
     }
 }

@@ -13,9 +13,11 @@ namespace ServicesAbstraction.PatientAbstraction
 {
     public interface IPatientService
     {
-        public Task<ServiceResponse> CompleteProfileAsync(string UserId, CompleteMedicalProfileDto profileDto);
+        Task<ServiceResponse> CompleteProfileAsync(string UserId, CompleteMedicalProfileDto profileDto);
 
-        public Task<IEnumerable<AvailabilitySlotDto>> GetAllSlotsAsync(string Email);
+
+        Task<PatientDashboardProfileDto> GetMyDashboardProfileAsync(string email);
+        Task<IEnumerable<AvailabilitySlotDto>> GetAllSlotsAsync(string Email);
 
 
         Task<IEnumerable<PatientAppointmentDto>> GetMyAppointmentsAsync(string email, AppointmentStatusDto? status = null);

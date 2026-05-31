@@ -16,6 +16,7 @@ using Shared.DTos.NotificationDTos;
 using Shared.DTos.PatientDTos;
 using Shared.DTos.ZoomDTos;
 using Shared.ErrorModels;
+using System.Globalization;
 
 namespace Services.PatientServices
 {
@@ -641,6 +642,93 @@ namespace Services.PatientServices
             };
         }
 
+        public async Task<PatientDashboardProfileDto> GetMyDashboardProfileAsync(string email)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+                throw new UnauthorizedException();
+
+            var patientRepo = _unitOfWork.GetRepository<Patient>();
+            var doctorRepo = _unitOfWork.GetRepository<Doctor>();
+            var predictionRepo = _unitOfWork.GetRepository<PredictionRecord>();
+
+            var patient = await patientRepo.GetByIdAsync(
+                new PatientDetailsSpecification(email));
+
+            if (patient is null)
+                throw new PatientNotFoundException(email);
+
+            if (patient.User is null)
+                throw new BadRequestException("Patient user data is not loaded.");
+
+            var doctor = await doctorRepo.GetByIdAsync(
+                new DoctorDetailsSpecification(patient.DoctorID));
+
+            var medicalInfo = patient.MedicalInfo ?? new MedicalData();
+
+            var predictions = await predictionRepo.GetAllAsync(
+                new PatientPredictionsSpecification(patient.Id));
+
+            var latestGdm = predictions
+                .Where(p => p.Type == PredictionType.GDM)
+                .OrderByDescending(p => p.CreatedAt)
+                .ThenByDescending(p => p.Id)
+                .FirstOrDefault();
+
+            var latestPreeclampsia = predictions
+                .Where(p => p.Type == PredictionType.Preeclampsia)
+                .OrderByDescending(p => p.CreatedAt)
+                .ThenByDescending(p => p.Id)
+                .FirstOrDefault();
+
+            var pregnancyWeek = GetPregnancyWeek(medicalInfo);
+            var trimester = GetTrimester(pregnancyWeek);
+
+            return new PatientDashboardProfileDto
+            {
+                PatientId = patient.Id,
+
+                DisplayName = patient.User.DisplayName,
+                Email = patient.User.Email ?? string.Empty,
+                PhoneNumber = patient.User.PhoneNumber,
+                ProfileImageUrl = await GenerateImageUrlAsync(patient.User.ProfileImagePath),
+
+                PregnancyLabel = BuildPregnancyLabel(trimester, pregnancyWeek),
+                Trimester = trimester,
+                PregnancyWeek = pregnancyWeek,
+                DaysToEstimatedDueDate = CalculateDaysToDueDate(medicalInfo, pregnancyWeek),
+
+                BloodType = medicalInfo.BloodType,
+                HeightCm = medicalInfo.Height,
+                WeightKg = medicalInfo.Weight,
+                NumberOfPregnancies = medicalInfo.NumberOfPregnancies,
+
+                GdmRisk = GetRiskLevel(latestGdm?.Confidence),
+                GdmConfidencePercentage = ToPercentage(latestGdm?.Confidence),
+
+                PreeclampsiaRisk = GetRiskLevel(latestPreeclampsia?.Confidence),
+                PreeclampsiaConfidencePercentage = ToPercentage(latestPreeclampsia?.Confidence),
+
+                DateOfBirth = medicalInfo.DateOfBirth?.ToString(
+                    "MMMM dd, yyyy",
+                    CultureInfo.InvariantCulture),
+
+                Doctor = doctor is null ? null : new PatientDashboardDoctorDto
+                {
+                    DoctorId = doctor.Id,
+                    DisplayName = doctor.User?.DisplayName ?? string.Empty,
+                    Email = doctor.User?.Email,
+                    PhoneNumber = doctor.User?.PhoneNumber,
+                    ProfileImageUrl = await GenerateImageUrlAsync(doctor.User?.ProfileImagePath),
+                    YearsOfExperience = doctor.YearsOfExperience,
+                    Location = doctor.Location,
+                    Specializations = doctor.Specializations ?? []
+                }
+            };
+        }
+
+
+
+
 
         private static string BuildMedicalTestObjectName(int patientId, string fileName)
         {
@@ -778,6 +866,103 @@ namespace Services.PatientServices
             var endAt = startAt.Add(appointment.AvailabilitySlot.Duration);
 
             return now >= startAt.AddMinutes(-15) && now <= endAt;
+        }
+
+
+
+        private async Task<string?> GenerateImageUrlAsync(string? objectName)
+        {
+            if (string.IsNullOrWhiteSpace(objectName))
+                return null;
+
+            return await _fileStorageService.GenerateReadUrlAsync(
+                objectName,
+                TimeSpan.FromHours(12));
+        }
+
+        private static int? GetPregnancyWeek(MedicalData medicalInfo)
+        {
+            if (medicalInfo.PregnancyWeek.HasValue && medicalInfo.PregnancyWeek.Value > 0)
+                return medicalInfo.PregnancyWeek.Value;
+
+            if (!medicalInfo.PregnancyStartDate.HasValue)
+                return null;
+
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            var days = today.DayNumber - medicalInfo.PregnancyStartDate.Value.DayNumber;
+
+            if (days < 0)
+                return null;
+
+            return Math.Min(42, (days / 7) + 1);
+        }
+
+        private static string? GetTrimester(int? pregnancyWeek)
+        {
+            if (!pregnancyWeek.HasValue || pregnancyWeek.Value <= 0)
+                return null;
+
+            if (pregnancyWeek.Value <= 13)
+                return "1st Trimester";
+
+            if (pregnancyWeek.Value <= 27)
+                return "2nd Trimester";
+
+            return "3rd Trimester";
+        }
+
+        private static string? BuildPregnancyLabel(string? trimester, int? pregnancyWeek)
+        {
+            if (!pregnancyWeek.HasValue)
+                return null;
+
+            if (string.IsNullOrWhiteSpace(trimester))
+                return $"Week {pregnancyWeek.Value}";
+
+            return $"{trimester} - Week {pregnancyWeek.Value}";
+        }
+
+        private static int? CalculateDaysToDueDate(MedicalData medicalInfo, int? pregnancyWeek)
+        {
+            if (medicalInfo.PregnancyStartDate.HasValue)
+            {
+                var today = DateOnly.FromDateTime(DateTime.Today);
+                var dueDate = medicalInfo.PregnancyStartDate.Value.AddDays(280);
+                var days = dueDate.DayNumber - today.DayNumber;
+
+                return Math.Max(0, days);
+            }
+
+            if (pregnancyWeek.HasValue)
+                return Math.Max(0, (40 - pregnancyWeek.Value) * 7);
+
+            return null;
+        }
+
+        private static decimal? ToPercentage(decimal? confidence)
+        {
+            if (!confidence.HasValue)
+                return null;
+
+            return confidence.Value <= 1
+                ? Math.Round(confidence.Value * 100, 2)
+                : Math.Round(confidence.Value, 2);
+        }
+
+        private static string GetRiskLevel(decimal? confidence)
+        {
+            if (!confidence.HasValue)
+                return "Not Predicted";
+
+            var percentage = ToPercentage(confidence) ?? 0;
+
+            if (percentage >= 75)
+                return "High Risk";
+
+            if (percentage >= 50)
+                return "Moderate Risk";
+
+            return "Low Risk";
         }
 
 

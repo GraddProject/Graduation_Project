@@ -2,23 +2,15 @@
 using DomainLayer.Exceptions;
 using DomainLayer.Models;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Options;
-using Services.Specifications.PatientSpecifications;
 using Services.Specifications.PatientSpecifications;
 using Services.Specifications.PredictionSpecifications;
 using ServicesAbstraction.Common;
 using ServicesAbstraction.ModelAbstraction;
 using Shared.DTos.MlDTos;
-using Shared.DTos.PatientDTos;
 using Shared.DTos.PredictionDTos;
-using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using System.Net.Http.Json;
-using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
 
 namespace Services.ModelServices
 {
@@ -165,7 +157,7 @@ namespace Services.ModelServices
                 PredictionRecordId = p.Id,
                 PatientName = p.Patient.User.DisplayName,
 
-                ProfileImageUrl = await _fileStorageService.GenerateReadUrlAsync(p.Patient.User.ProfileImagePath,TimeSpan.FromHours(12)),
+                ProfileImageUrl = await _fileStorageService.GenerateReadUrlAsync(p.Patient.User.ProfileImagePath, TimeSpan.FromHours(12)),
 
                 MedicalHistoryId = p.MedicalHistory?.Id,
                 Type = p.Type.ToString(),
@@ -207,7 +199,7 @@ namespace Services.ModelServices
             {
                 PredictionRecordId = prediction.Id,
                 PatientName = prediction.Patient.User.DisplayName,
-                ProfileImageUrl = await _fileStorageService.GenerateReadUrlAsync(prediction.Patient.User.ProfileImagePath,TimeSpan.FromHours(12)),
+                ProfileImageUrl = await _fileStorageService.GenerateReadUrlAsync(prediction.Patient.User.ProfileImagePath, TimeSpan.FromHours(12)),
                 Type = prediction.Type.ToString(),
                 Date = prediction.CreatedAt.ToString("MMM dd, yyyy", CultureInfo.InvariantCulture),
                 Result = GetRiskLevel(prediction.Confidence),
@@ -215,6 +207,92 @@ namespace Services.ModelServices
                 InputJson = prediction.InputJson,
                 RawResponseJson = prediction.RawResponseJson
             };
+        }
+
+
+
+        public async Task<IEnumerable<PredictionRiskDashboardDto>> GetPredictionRiskDashboardAsync(string email)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+                throw new UnauthorizedException();
+
+            var doctorRepo = _unitOfWork.GetRepository<Doctor>();
+            var predictionRepo = _unitOfWork.GetRepository<PredictionRecord>();
+
+            var doctor = await doctorRepo.GetByIdAsync(new DoctorDetailsSpecification(email));
+
+            if (doctor is null)
+                throw new DoctorNotFoundException("Doctor not found.");
+
+            var predictions = await predictionRepo.GetAllAsync(
+                new DoctorPredictionsSpecification(doctor.Id));
+
+            var latestPredictionPerPatientPerType = predictions
+                .GroupBy(p => new { p.PatientId, p.Type })
+                .Select(g => g
+                    .OrderByDescending(p => p.CreatedAt)
+                    .ThenByDescending(p => p.Id)
+                    .First())
+                .ToList();
+
+            return new List<PredictionRiskDashboardDto>
+            {
+                BuildRiskDashboardCard(
+                    PredictionType.GDM,
+                    "GDM Risk Level",
+                    latestPredictionPerPatientPerType),
+
+                BuildRiskDashboardCard(
+                    PredictionType.Preeclampsia,
+                    "Preeclampsia Risk Level",
+                    latestPredictionPerPatientPerType)
+            };
+        }
+
+
+
+        public async Task<IEnumerable<PatientPredictionHistoryDto>> GetPatientPredictionHistoryAsync(string email, int patientId)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+                throw new UnauthorizedException();
+
+            if (patientId <= 0)
+                throw new BadRequestException("Patient id is required.");
+
+            var doctorRepo = _unitOfWork.GetRepository<Doctor>();
+            var patientRepo = _unitOfWork.GetRepository<Patient>();
+            var predictionRepo = _unitOfWork.GetRepository<PredictionRecord>();
+
+            var doctor = await doctorRepo.GetByIdAsync(new DoctorDetailsSpecification(email));
+
+            if (doctor is null)
+                throw new DoctorNotFoundException("Doctor not found.");
+
+            var patient = await patientRepo.GetByIdAsync(
+                new PatientsBelongToSpecifcDoctor(patientId, doctor.Id));
+
+            if (patient is null)
+                throw PatientNotFoundException.Belong(
+                    "Patient not found or does not belong to this doctor.");
+
+            var predictions = await predictionRepo.GetAllAsync(
+                new PatientPredictionHistorySpecification(doctor.Id, patientId));
+
+            return predictions.Select(p => new PatientPredictionHistoryDto
+            {
+                PredictionRecordId = p.Id,
+
+                Month = p.CreatedAt.ToString("MMM", CultureInfo.InvariantCulture).ToUpper(),
+                Day = p.CreatedAt.Day,
+                CreatedAt = p.CreatedAt,
+
+                Type = p.Type.ToString(),
+                RiskLevel = GetRiskLevel(p.Confidence),
+
+                Confidence = p.Confidence,
+
+                MedicalHistoryId = p.MedicalHistory?.Id
+            });
         }
 
 
@@ -236,5 +314,29 @@ namespace Services.ModelServices
 
             return "Low Risk";
         }
+
+
+        private static PredictionRiskDashboardDto BuildRiskDashboardCard(PredictionType type, string title, IEnumerable<PredictionRecord> predictions)
+        {
+            var typePredictions = predictions
+                .Where(p => p.Type == type)
+                .ToList();
+
+            return new PredictionRiskDashboardDto
+            {
+                Type = type.ToString(),
+                Title = title,
+
+                TotalPatients = typePredictions.Count,
+
+                HighLevelPatients = typePredictions.Count(p => p.Confidence >= 75),
+
+                ModerateLevelPatients = typePredictions.Count(p =>
+                    p.Confidence >= 50 && p.Confidence < 75),
+
+                LowLevelPatients = typePredictions.Count(p => p.Confidence < 50)
+            };
+        }
+
     }
 }

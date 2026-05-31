@@ -43,12 +43,12 @@ namespace Presentation.Controllers
             return Ok(result);
         }
 
-        [HttpPost("predict")]
-        public async Task<ActionResult<PredictionResponseDto>> Predict([FromBody] PredictionRequestDto request)
-        {
-            var result = await _serviceManger.ModelPredictionService.PredictAsync(request);
-            return Ok(result);
-        }
+        //[HttpPost("predict")]
+        //public async Task<ActionResult<PredictionResponseDto>> Predict([FromBody] PredictionRequestDto request)
+        //{
+        //    var result = await _serviceManger.ModelPredictionService.PredictAsync(request);
+        //    return Ok(result);
+        //}
 
 
 
@@ -62,6 +62,30 @@ namespace Presentation.Controllers
 
             return Ok(result);
         }
+
+
+        [HttpGet("risk-dashboard")]
+        public async Task<ActionResult<IEnumerable<PredictionRiskDashboardDto>>> GetRiskDashboard()
+        {
+            var email = User.FindFirstValue(ClaimTypes.Email);
+
+            var result = await _serviceManger.ModelPredictionService.GetPredictionRiskDashboardAsync(email!);
+
+            return Ok(result);
+        }
+
+
+        [HttpGet("patients/{patientId:int}/prediction-history")]
+        public async Task<ActionResult<IEnumerable<PatientPredictionHistoryDto>>> GetPatientPredictionHistory(int patientId)
+        {
+            var email = User.FindFirstValue(ClaimTypes.Email);
+
+            var result = await _serviceManger.ModelPredictionService.GetPatientPredictionHistoryAsync(email!, patientId);
+
+            return Ok(result);
+        }
+
+
 
         [HttpGet("PredictionsList")]
         public async Task<ActionResult<IEnumerable<PredictionInsightDto>>> GetDoctorPredictionInsights()
@@ -388,6 +412,17 @@ namespace Presentation.Controllers
 
             var result = await _serviceManger.DoctorService
                 .GetDoctorOnlineSessionStartLinkAsync(email!, appointmentId);
+
+            return Ok(result);
+        }
+
+
+        [HttpGet("dashboard/cards")]
+        public async Task<ActionResult<DoctorDashboardCardsDto>> GetDashboardCards()
+        {
+            var email = User.FindFirstValue(ClaimTypes.Email);
+
+            var result = await _serviceManger.DoctorService.GetDoctorDashboardCardsAsync(email!);
 
             return Ok(result);
         }

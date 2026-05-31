@@ -1716,6 +1716,62 @@ namespace Services.DoctorServices
         }
 
 
+        public async Task<DoctorDashboardCardsDto> GetDoctorDashboardCardsAsync(string Email)
+        {
+            if (string.IsNullOrWhiteSpace(Email))
+                throw new UnauthorizedException();
+
+            var doctorRepo = _unitOfWork.GetRepository<Doctor>();
+            var patientRepo = _unitOfWork.GetRepository<Patient>();
+            var appointmentRepo = _unitOfWork.GetRepository<Appointment>();
+            var predictionRepo = _unitOfWork.GetRepository<PredictionRecord>();
+
+            var doctor = await doctorRepo.GetByIdAsync(
+                new DoctorDetailsSpecification(Email));
+
+            if (doctor is null)
+                throw new DoctorNotFoundException("Doctor not found.");
+
+            await CompleteExpiredConfirmedAppointmentsForDoctorAsync(doctor.Id);
+
+            var todayStart = DateTime.Today;
+            var tomorrowStart = todayStart.AddDays(1);
+
+            var patients = await patientRepo.GetAllAsync(
+                new DoctorPatientsCardsSpecification(doctor.Id));
+
+            var appointments = await appointmentRepo.GetAllAsync(
+                new DoctorAppointmentsSummarySpecification(doctor.Id));
+
+            var predictions = await predictionRepo.GetAllAsync(
+                new DoctorPatientCardsPredictionsSpecification(doctor.Id));
+
+            var appointmentsToday = appointments.Count(a =>
+                a.AvailabilitySlot is not null &&
+                a.AvailabilitySlot.StartAt >= todayStart &&
+                a.AvailabilitySlot.StartAt < tomorrowStart &&
+                a.Status != AppointmentStatus.Canceled);
+
+            var latestPredictionPerPatientPerType = predictions
+                .GroupBy(p => new { p.PatientId, p.Type })
+                .Select(g => g
+                    .OrderByDescending(p => p.CreatedAt)
+                    .ThenByDescending(p => p.Id)
+                    .First())
+                .ToList();
+
+            var highRiskCases = latestPredictionPerPatientPerType.Count(p => p.Confidence >= 0.75m);
+
+            return new DoctorDashboardCardsDto
+            {
+                TotalPatients = patients.Count(),
+                AppointmentsToday = appointmentsToday,
+                HighRiskCases = highRiskCases
+            };
+        }
+
+
+
         private static bool IsOverlapping(DateTime firstStart, TimeSpan firstDuration, DateTime secondStart, TimeSpan secondDuration)
         {
             var firstEnd = firstStart.Add(firstDuration);
