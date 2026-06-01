@@ -7,12 +7,14 @@ import { Mail, Lock, Eye, EyeOff, ArrowRight, Leaf } from "lucide-react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { UserContext } from "../../Components/context/User.context";
+import { getDoctorProfile } from "../../helpers/userProfile";
+import { getPatientProfile } from "../../helpers/userProfile";
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [remember, setRemember] = useState(false);
   const [incorrectError, setIncorrectError] = useState("");
-  let { setToken } = useContext(UserContext);
+  const { setToken, setUser } = useContext(UserContext);
   const navigate = useNavigate();
 
   const passRegex =
@@ -48,19 +50,33 @@ export default function Login() {
       let { data } = await axios.request(options);
       if (data.token) {
         localStorage.setItem("token", data.token);
-        setToken(data.token);
-        console.log("Login successful, token stored.", data.token);
-        const userData = await getCurrentUser(data.token);
-        // Step 3: Navigate based on role
-        const role = userData.role[0];
-        if (role === "Admin") {
-          navigate("/admindashboard");
-        } else if (role === "Doctor") {
-          navigate("/doctor");
+        const role = data.role[0];
+
+        let profile = null;
+
+        if (role === "Doctor") {
+          profile = await getDoctorProfile(data.token);
         } else if (role === "Patient") {
-          navigate("/patient");
-        } else {
-          navigate("/");
+            profile = await getPatientProfile(data.token);
+        }
+    
+        const userData = {
+          token: data.token,
+          email: data.email,
+          displayName: data.displayName,
+          role: data.role[0], 
+          profileImageUrl: profile.profileImageUrl,
+        };
+
+        setToken(data.token);
+        setUser(userData);
+
+        if (userData.role === "Doctor") {
+          navigate("/doctor/dashboard", { replace: true });
+        } else if (userData.role === "Patient") {
+          navigate("/patient/dashboard", { replace: true });
+        } else if (userData.role === "Admin") {
+          navigate("/admindashboard", { replace: true });
         }
       }
     } catch (error) {

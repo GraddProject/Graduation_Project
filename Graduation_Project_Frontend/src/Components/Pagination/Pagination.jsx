@@ -29,7 +29,7 @@ export default function Pagination({
   const endItem = Math.min(currentPage * itemsPerPage, totalItems);
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-center sm:justify-between gap-3 px-4 sm:px-6 py-4 rounded-lg">
+    <div className="flex flex-col sm:flex-row items-center justify-center sm:justify-between gap-3 px-4 sm:px-6 py-2 rounded-lg">
 
       {/* TEXT */}
       <p className="text-[13px] sm:text-sm text-center sm:text-left text-[#7A8F7CFF]">

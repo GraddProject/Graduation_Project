@@ -1,32 +1,79 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import Login from "./Pages/Login/Login";
+
 import Layout from "./Components/Layout/Layout";
-import CreatPass from "./Pages/CreatePass/CreatPass";
 import UserProvider from "./Components/context/User.context";
-import CreateUserAccount from "./Pages/CreateUserAccount/CreateUserAccount";
+
+import Login from "./Pages/Login/Login";
+import CreatPass from "./Pages/CreatePass/CreatPass";
+
 import Home from "./Pages/Home/Home";
+
 import DoctorDashboard from "./Pages/DoctorDashboard/DoctorDashboard";
-import PatientDashboard from "./Pages/PatientDashboard/PatientDashboard";
 import DoctorViewAppointments from "./Pages/DoctorViewAppointments/DoctorViewAppointments";
+import Prediction from "./Pages/Prediction/Prediction";
+
+import PatientDashboard from "./Pages/PatientDashboard/PatientDashboard";
+import PatientProfile from "./Pages/DoctorPatientProfile/DoctorPatientProfile";
+
 import AdminDashboard from "./Pages/AdminDashboard/AdminDashboard";
+import CreateUserAccount from "./Pages/CreateUserAccount/CreateUserAccount";
+
+import ProtectedRoute from "./Components/ProtectedRoute/ProtectedRoute";
+import PredictionHistory from "./Pages/PredictionHistory/PredictionHistory";
+import DoctorProfile from "./Pages/DoctorProfile/DoctorProfile";
+import DoctorViewAppointments from "./Pages/DoctorViewAppointments/DoctorViewAppointments";
+
 
 function App() {
-  let router = createBrowserRouter([
+  const router = createBrowserRouter([
     {
-      path: "/",
-      element: <Layout />,
       children: [
-        { index: true, element: <Home /> },
-        { path: "/doctor/dashboard", element: <DoctorDashboard /> },
-        { path: "/patient", element: <PatientDashboard /> },
-        { path: "/doctor/appointments", element: <DoctorViewAppointments /> },
-       
+        { path: "/", element: <Login /> },
+        { path: "/login", element: <Login /> },
+        { path: "/createpass", element: <CreatPass /> },
       ],
     },
-    { path: "/login", element: <Login /> },
-    { path: "/createpass", element: <CreatPass /> },
-    { path: "/createaccount", element: <CreateUserAccount /> }, 
-    { path: "/admindashboard", element: <AdminDashboard /> },
+
+    {
+      element: <ProtectedRoute allowedRoles={["Doctor", "Patient"]} />,
+      children: [
+      {
+        element: <Layout />,
+        children: [ 
+          {
+            element: <ProtectedRoute allowedRoles={["Doctor"]} />,
+            children: [
+              { path: "/doctor/dashboard", element: <DoctorDashboard /> },
+              { path: "/doctor/appointments", element: <DoctorViewAppointments /> },
+              { path: "/doctor/prediction/:id", element: <Prediction /> },
+              { path: "/doctor/prediction-history", element: <PredictionHistory /> },
+              { path: "/doctor/profile", element: <DoctorProfile /> },
+              { path: "/doctor/appointments", element: <DoctorViewAppointments /> },
+              { path: "/doctor/patient-profile", element: <DoctorPatientProfile /> }
+            ],
+          },
+
+
+          {
+            element: <ProtectedRoute allowedRoles={["Patient"]} />,
+            children: [
+              { path: "/patient/dashboard", element: <PatientDashboard /> },
+            ],
+          },
+
+
+        ],
+      },
+      ]
+    },
+
+    {
+      element: <ProtectedRoute allowedRoles={["Admin"]} />,
+      children: [
+        { path: "/admindashboard", element: <AdminDashboard /> },
+        { path: "/createaccount", element: <CreateUserAccount /> },
+      ],
+    },
   ]);
 
   return (

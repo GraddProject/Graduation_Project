@@ -35,18 +35,18 @@ export default function Dashboard() {
   const openUpdate = (user) => { setSelectedUser(user); setShowUpdate(true); };
   const openDelete = (user) => { setSelectedUser(user); setShowDelete(true); };
 
-const getUsers = async () => {
-  try {
-    setLoading(true);
+  const getUsers = async () => {
+    try {
+      setLoading(true);
 
-    const params = {
-      search,
-      FromDate: fromDate || "",
-      ToDate: toDate || "",
-      sort,
-      pageNumber: page,
-      PageSize: pageSize,
-    };
+      const params = {
+        search,
+        FromDate: fromDate || "",
+        ToDate: toDate || "",
+        sort,
+        pageNumber: page,
+        PageSize: pageSize,
+        };
 
     if (role !== "all") {
       params.Role = role;

@@ -23,7 +23,7 @@ export default function DeleteUser({ user, onClose }) {
       console.log({
       role: user.role,
       id: user.id,
-});
+  });
 
       onClose(true); 
     } catch (error) {
