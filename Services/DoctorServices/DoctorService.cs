@@ -1307,6 +1307,74 @@ namespace Services.DoctorServices
                 : throw new BadRequestException("Failed to add medical history.");
         }
 
+        public async Task<MedicalHistoryDetailsDto> AddPreScriptionsAsync(string Email, int PatientId, int MedicalHistoryId, AddPreScriptionsDto dto)
+        {
+            if (string.IsNullOrWhiteSpace(Email))
+                throw new UnauthorizedException();
+
+            if (dto is null || dto.PreScriptions is null || !dto.PreScriptions.Any())
+                throw new BadRequestException("At least one prescription is required.");
+
+            var DRepo = _unitOfWork.GetRepository<Doctor>();
+            var PRepo = _unitOfWork.GetRepository<Patient>();
+            var MRepo = _unitOfWork.GetRepository<MedicalHistory>();
+            var PRRepo = _unitOfWork.GetRepository<PreScription>();
+
+            var doctor = await DRepo.GetByIdAsync(new DoctorDetailsSpecification(Email));
+
+            if (doctor is null)
+                throw new DoctorNotFoundException("Doctor not found.");
+
+            var patient = await PRepo.GetByIdAsync(
+                new PatientsBelongToSpecifcDoctor(PatientId, doctor.Id));
+
+            if (patient is null)
+                throw PatientNotFoundException.Belong(
+                    "Patient not found or does not belong to this doctor.");
+
+            var medicalHistory = await MRepo.GetByIdAsync(
+                new PatientMedicalHistoriesSpecification(PatientId, MedicalHistoryId));
+
+            if (medicalHistory is null)
+                throw new MedicalHistoryNotFoundException(MedicalHistoryId);
+
+            foreach (var item in dto.PreScriptions)
+            {
+                if (string.IsNullOrWhiteSpace(item.MedicationName))
+                    throw new BadRequestException("Medication name is required.");
+
+                if (string.IsNullOrWhiteSpace(item.Dosage))
+                    throw new BadRequestException("Dosage is required.");
+
+                if (string.IsNullOrWhiteSpace(item.Duration))
+                    throw new BadRequestException("Duration is required.");
+
+                if (string.IsNullOrWhiteSpace(item.Instructions))
+                    throw new BadRequestException("Instructions are required.");
+
+                var prescription = new PreScription
+                {
+                    MedicalHistoryId = medicalHistory.Id,
+                    MedicationName = item.MedicationName.Trim(),
+                    Dosage = item.Dosage.Trim(),
+                    Duration = item.Duration.Trim(),
+                    Instructions = item.Instructions.Trim(),
+                    CreatedAt = DateTime.Now
+                };
+
+                await PRRepo.AddAsync(prescription);
+            }
+
+            var saved = await _unitOfWork.SaveChangesAsync();
+
+            if (saved <= 0)
+                throw new BadRequestException("Failed to add prescriptions.");
+
+            var updatedMedicalHistory = await MRepo.GetByIdAsync(
+                new PatientMedicalHistoriesSpecification(PatientId, MedicalHistoryId));
+
+            return _mapper.Map<MedicalHistoryDetailsDto>(updatedMedicalHistory);
+        }
 
         public async Task<MedicalHistoryDetailsDto> UpdateMedicalHistoryAsync(string Email, int PatientId, int MedicalHistoryId, UpdateMedicalHistoryDto dto)
         {

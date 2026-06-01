@@ -25,27 +25,30 @@ namespace ServicesAbstraction.DoctorAbstraction
         Task<DoctorProfileDto> GetDoctorProfileAsync(string email);
         public Task<IEnumerable<DoctorPatientDto>> GetAllPatientsAsync(string Email);
 
-        Task<DoctorPatientDto> GetPatientByIdAsync(string Email,int patientId);
+        Task<DoctorPatientDto> GetPatientByIdAsync(string Email, int patientId);
 
         public Task<IEnumerable<MedicalHistoryDetailsDto>> GetPatientMedicalHistoriesAsync(string Email, int PatientId);
         public Task<MedicalHistoryDetailsDto> GetPatientMedicalHistoryByIdAsync(string Email, int PatientId, int MedicalHistoryId);
         public Task<MedicalHistoryDetailsDto> AddMedicalHistoryAsync(string Email, int PatientId, AddMedicalHistoryDto addMedicaldto);
 
+        Task<MedicalHistoryDetailsDto> AddPreScriptionsAsync(string Email, int PatientId, int MedicalHistoryId, AddPreScriptionsDto dto);
+
         public Task<MedicalHistoryDetailsDto> UpdateMedicalHistoryAsync(string Email, int PatientId, int MedicalHistoryId, UpdateMedicalHistoryDto updateMedicaldto);
         public Task<MedicalHistoryDetailsDto> UpdatePrescriptionAsync(string email, int patientId, int medicalHistoryId, int prescriptionId, UpdatePreScriptionDto dto);
+
 
         public Task<ServiceResponse> DeleteMedicalHistoryAsync(string Email, int PatientId, int MedicalHistoryId);
         public Task<ServiceResponse> DeletePreScriptionAsync(string Email, int PatientId, int medicalHistoryId, int prescriptionId);
 
 
-        Task<ServiceResponse> AddWeeklyAvailabilitySlotsAsync(string email,AddWeeklyAvailabilitySlotsDto dto);
+        Task<ServiceResponse> AddWeeklyAvailabilitySlotsAsync(string email, AddWeeklyAvailabilitySlotsDto dto);
 
-        Task<ServiceResponse> AddAvailabilitySlotsRangeAsync(string email,AddAvailabilitySlotsRangeDto dto);
+        Task<ServiceResponse> AddAvailabilitySlotsRangeAsync(string email, AddAvailabilitySlotsRangeDto dto);
         public Task<bool> AddAvailabilitySlotAsync(string Email, AddAvailabilitySlotDto addAvailabilitySlot);
 
         Task<IEnumerable<DoctorAvailabilityOverviewDto>> GetAvailabilityOverviewAsync(string email, AvailabilityOverviewQueryParams? queryParams = null);
         //Task<IEnumerable<DoctorAvailabilityOverviewDto>> GetAvailabilityOverviewAsync(string email,AvailabilitySlotFilterDto filter = AvailabilitySlotFilterDto.All);
-      
+
         public Task<IEnumerable<AvailabilitySlotDto>> GetMyAvailabilitySlotsAsync(string Email);
 
         Task<IEnumerable<DoctorAppointmentDto>> GetDoctorAppointmentsAsync(string Email, AppointmentStatusDto? status = null);
@@ -55,7 +58,7 @@ namespace ServicesAbstraction.DoctorAbstraction
         Task<ServiceResponse> CancelAppointmentAsync(string email, int appointmentId);
 
 
-        Task<ServiceResponse> RequestRescheduleAppointmentAsync(string email,int appointmentId,RescheduleAppointmentDto dto);
+        Task<ServiceResponse> RequestRescheduleAppointmentAsync(string email, int appointmentId, RescheduleAppointmentDto dto);
 
 
         Task<DoctorAppointmentSummaryDto> GetDoctorAppointmentsSummaryAsync(string email);
@@ -77,7 +80,7 @@ namespace ServicesAbstraction.DoctorAbstraction
 
         Task<PaginatedResult<DoctorPatientCardDto>> GetAllPatientsAsync(string Email, DoctorPatientsQueryParams queryParams);
 
-        Task<DoctorDashboardOverviewDto> GetDoctorDashboardOverviewAsync(string Email,DoctorDashboardDateFilterDto dateFilter = DoctorDashboardDateFilterDto.ThisMonth);
+        Task<DoctorDashboardOverviewDto> GetDoctorDashboardOverviewAsync(string Email, DoctorDashboardDateFilterDto dateFilter = DoctorDashboardDateFilterDto.ThisMonth);
 
 
         Task<OnlineSessionStartDto> GetDoctorOnlineSessionStartLinkAsync(string email, int appointmentId);

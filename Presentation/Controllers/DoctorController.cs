@@ -150,6 +150,16 @@ namespace Presentation.Controllers
         }
 
 
+        [HttpPost("patients/{patientId:int}/medical-histories/{medicalHistoryId:int}/prescriptions")]
+        public async Task<ActionResult<MedicalHistoryDetailsDto>> AddPreScriptions(int patientId, int medicalHistoryId, [FromBody] AddPreScriptionsDto dto)
+        {
+            var email = User.FindFirstValue(ClaimTypes.Email);
+
+            var result = await _serviceManger.DoctorService.AddPreScriptionsAsync(email!, patientId, medicalHistoryId, dto);
+
+            return Ok(result);
+        }
+
         [HttpPut("UpdateMedicalHistory")]
         public async Task<ActionResult<MedicalHistoryDetailsDto>> UpdateMedicalHistory(int PatientId, int MedicalHistoryId, UpdateMedicalHistoryDto updateMedicaldto)
         {
