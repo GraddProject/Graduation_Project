@@ -154,6 +154,7 @@ namespace Services.ModelServices
 
             var data = predictions.Select(async p => new PredictionInsightDto
             {
+                PatientId =p.PatientId,
                 PredictionRecordId = p.Id,
                 PatientName = p.Patient.User.DisplayName,
 

@@ -8,6 +8,7 @@ namespace Shared.DTos.PredictionDTos
 {
     public class PredictionInsightDto
     {
+        public int PatientId { get; set; }
         public int PredictionRecordId { get; set; }
 
         public int? MedicalHistoryId { get; set; }
