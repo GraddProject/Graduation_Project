@@ -10,6 +10,7 @@ namespace Shared.DTos.DoctorDTos
     {
         public int TotalPatients { get; set; }
         public int AppointmentsToday { get; set; }
-        public int HighRiskCases { get; set; }
+        public int GdmHighRiskCases { get; set; }
+        public int PreeclampsiaHighRiskCases { get; set; }
     }
 }

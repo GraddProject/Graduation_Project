@@ -21,6 +21,7 @@ namespace Shared.DTos.DoctorDTos
         public string? BloodType { get; set; } = default!;
         public int? Height { get; set; }
         public int? Weight { get; set; }
+        public int? NumberOfPregnancies { get; set; }
         public DateOnly? PregnancyStartDate { get; set; }
         public int? PregnancyWeek { get; set; }
         public string? Trimester { get; set; }

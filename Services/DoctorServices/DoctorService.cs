@@ -1828,13 +1828,15 @@ namespace Services.DoctorServices
                     .First())
                 .ToList();
 
-            var highRiskCases = latestPredictionPerPatientPerType.Count(p => p.Confidence >= 0.75m);
+            var gdmHighRiskCases = latestPredictionPerPatientPerType.Count(p => p.Type == PredictionType.GDM && p.Confidence >= 0.75m);
 
+            var preeclampsiaHighRiskCases = latestPredictionPerPatientPerType.Count(p => p.Type == PredictionType.Preeclampsia && p.Confidence >= 0.75m);
             return new DoctorDashboardCardsDto
             {
                 TotalPatients = patients.Count(),
                 AppointmentsToday = appointmentsToday,
-                HighRiskCases = highRiskCases
+                GdmHighRiskCases = gdmHighRiskCases,
+                PreeclampsiaHighRiskCases = preeclampsiaHighRiskCases
             };
         }
 

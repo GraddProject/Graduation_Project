@@ -48,7 +48,7 @@ namespace Services.MappingProfiles
             .ForMember(d => d.PhoneNumber, o => o.MapFrom(s => s.User.PhoneNumber))
             .ForMember(d => d.CreatedAt, o => o.MapFrom(s => s.User.CreatedAt))
             .ForMember(d => d.Actived, o => o.MapFrom(s => s.User.EmailConfirmed))
-            
+            .ForMember(dest => dest.NumberOfPregnancies, o => o.MapFrom(src => src.MedicalInfo.NumberOfPregnancies))
             .ForMember(dest => dest.Age, opt => opt.MapFrom(src => src.MedicalInfo != null ? src.MedicalInfo.Age : null))
             .ForMember(dest => dest.BloodType, opt => opt.MapFrom(src => src.MedicalInfo != null ? src.MedicalInfo.BloodType : null))
             .ForMember(dest => dest.Height, opt => opt.MapFrom(src => src.MedicalInfo != null ? src.MedicalInfo.Height : null))
