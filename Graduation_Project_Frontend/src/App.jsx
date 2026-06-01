@@ -9,6 +9,7 @@ import DoctorDashboard from "./Pages/DoctorDashboard/DoctorDashboard";
 import PatientDashboard from "./Pages/PatientDashboard/PatientDashboard";
 import DoctorViewAppointments from "./Pages/DoctorViewAppointments/DoctorViewAppointments";
 import AdminDashboard from "./Pages/AdminDashboard/AdminDashboard";
+import DoctorProfile from "./Pages/DoctorProfile/DoctorProfile";
 
 function App() {
   let router = createBrowserRouter([
@@ -18,9 +19,9 @@ function App() {
       children: [
         { index: true, element: <Home /> },
         { path: "/doctor/dashboard", element: <DoctorDashboard /> },
-        { path: "/patient", element: <PatientDashboard /> },
+        { path: "/patient/dashboard", element: <PatientDashboard /> },
         { path: "/doctor/appointments", element: <DoctorViewAppointments /> },
-       
+        { path: "/doctor/profile", element: <DoctorProfile /> },
       ],
     },
     { path: "/login", element: <Login /> },
