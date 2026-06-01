@@ -18,7 +18,7 @@ import {
 import { UserContext } from "../../Components/context/User.context";
 import StatsCard from "../../Components/StatsCard/StatsCard";
 import WeekStrip from "../../Components/WeekStrip/WeekStrip";
-import AppointmentRow from "../../Components/AppointmentRow/AppointmentROw";
+import AppointmentRow from "../../Components/AppointmentRow/AppointmentRow";
 
 const BASE = "https://her-journey-1044023551709.us-central1.run.app/";
 const STATUSES = ["Confirmed", "ReschedulePending", "Completed"];
