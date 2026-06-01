@@ -16,8 +16,8 @@ import {
   Loader2,
 } from "lucide-react";
 import { UserContext } from "../../Components/context/User.context";
-import StatsCard from "../../components/StatsCard/StatsCard";
-import WeekStrip from "../../components/WeekStrip/WeekStrip";
+import StatsCard from "../../Components/StatsCard/StatsCard";
+import WeekStrip from "../../Components/WeekStrip/WeekStrip";
 import AppointmentRow from "../../Components/AppointmentRow/AppointmentROw";
 
 const BASE = "https://her-journey-1044023551709.us-central1.run.app/";
