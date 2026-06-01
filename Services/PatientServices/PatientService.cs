@@ -4,6 +4,7 @@ using DomainLayer.Exceptions;
 using DomainLayer.Models;
 using Microsoft.AspNetCore.Http;
 using Services.Specifications.AppointmentSpecifications;
+using Services.Specifications.MedicalHistorySpecification;
 using Services.Specifications.MedicalTestSpecifications;
 using Services.Specifications.PatientSpecifications;
 using ServicesAbstraction.Common;
@@ -11,6 +12,7 @@ using ServicesAbstraction.NotificationAbstraction;
 using ServicesAbstraction.PatientAbstraction;
 using ServicesAbstraction.ZoomAbstraction;
 using Shared.DTos.AppointmentDTos;
+using Shared.DTos.MedicalHistoryDTos;
 using Shared.DTos.MedicalTestDTos;
 using Shared.DTos.NotificationDTos;
 using Shared.DTos.PatientDTos;
@@ -725,6 +727,98 @@ namespace Services.PatientServices
                 }
             };
         }
+
+
+
+
+        public async Task<IEnumerable<PatientMedicalHistoryMonthGroupDto>> GetMyMedicalHistoriesAsync(string userId, PatientMedicalHistoryQueryParams queryParams)
+        {
+            if (string.IsNullOrWhiteSpace(userId))
+                throw new UnauthorizedException();
+
+            queryParams ??= new PatientMedicalHistoryQueryParams();
+
+            var patientRepo = _unitOfWork.GetRepository<Patient>();
+            var medicalHistoryRepo = _unitOfWork.GetRepository<MedicalHistory>();
+
+            var patient = await patientRepo.GetByIdAsync(new PatientByIdSpecification(userId));
+
+            if (patient is null)
+                throw new PatientNotFoundException(userId);
+
+            var histories = await medicalHistoryRepo.GetAllAsync(
+                new PatientMedicalHistoriesSpecification(
+                    patient.Id,
+                    queryParams.HasPrediction,
+                    queryParams.Sort));
+
+            var items = histories.Select(h =>
+            {
+                var prediction = h.PredictionRecord;
+
+                return new
+                {
+                    MonthKey = new DateTime(h.CreatedAt.Year, h.CreatedAt.Month, 1),
+
+                    Item = new PatientMedicalHistoryTimelineItemDto
+                    {
+                        MedicalHistoryId = h.Id,
+
+                        Diagnosis = h.Diagnosis,
+                        VitalSigns = h.VitalSigns,
+                        Notes = h.Notes,
+
+                        CreatedAt = h.CreatedAt,
+                        Date = h.CreatedAt.ToString("MMM dd, yyyy", CultureInfo.InvariantCulture),
+                        Time = h.CreatedAt.ToString("hh:mm tt", CultureInfo.InvariantCulture),
+
+                        //DoctorName = h.CreatedByDoctor?.User?.DisplayName,
+
+                        HasPrediction = prediction is not null,
+
+                        Prediction = prediction is null
+                            ? null
+                            : new PatientMedicalHistoryPredictionDto
+                            {
+                                PredictionRecordId = prediction.Id,
+                                Type = prediction.Type.ToString(),
+                                Result = prediction.Result,
+                                RiskLevel = GetRiskLevel(prediction.Confidence),
+                                ConfidencePercentage = ToPercentage(prediction.Confidence) ?? 0,
+                                CreatedAt = prediction.CreatedAt
+                            },
+
+                        Prescriptions = h.PreScriptions
+                            .OrderByDescending(p => p.CreatedAt)
+                            .Select(p => new PatientMedicalHistoryPrescriptionDto
+                            {
+                                PrescriptionId = p.Id,
+                                MedicationName = p.MedicationName,
+                                Dosage = p.Dosage,
+                                Duration = p.Duration,
+                                Instructions = p.Instructions,
+                                CreatedAt = p.CreatedAt
+                            })
+                            .ToList()
+                    }
+                };
+            }).ToList();
+
+            var grouped = items
+                .GroupBy(x => x.MonthKey)
+                .Select(g => new PatientMedicalHistoryMonthGroupDto
+                {
+                    Month = g.Key.ToString("MMMM yyyy", CultureInfo.InvariantCulture),
+                    Items = queryParams.Sort == PatientMedicalHistorySort.Oldest
+                        ? g.Select(x => x.Item).OrderBy(x => x.CreatedAt).ToList()
+                        : g.Select(x => x.Item).OrderByDescending(x => x.CreatedAt).ToList()
+                });
+
+            return queryParams.Sort == PatientMedicalHistorySort.Oldest
+                ? grouped.OrderBy(g => DateTime.ParseExact(g.Month, "MMMM yyyy", CultureInfo.InvariantCulture)).ToList()
+                : grouped.OrderByDescending(g => DateTime.ParseExact(g.Month, "MMMM yyyy", CultureInfo.InvariantCulture)).ToList();
+        }
+
 
 
 

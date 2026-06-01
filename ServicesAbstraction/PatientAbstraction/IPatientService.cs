@@ -1,4 +1,5 @@
 ﻿using Shared.DTos.AppointmentDTos;
+using Shared.DTos.MedicalHistoryDTos;
 using Shared.DTos.MedicalTestDTos;
 using Shared.DTos.PatientDTos;
 using Shared.DTos.ZoomDTos;
@@ -17,6 +18,9 @@ namespace ServicesAbstraction.PatientAbstraction
 
 
         Task<PatientDashboardProfileDto> GetMyDashboardProfileAsync(string email);
+
+
+
         Task<IEnumerable<AvailabilitySlotDto>> GetAllSlotsAsync(string Email);
 
 
@@ -41,5 +45,9 @@ namespace ServicesAbstraction.PatientAbstraction
         Task<MedicalTestFileDto> ViewMedicalTestAsync(string userId, int medicalTestId);
         Task<ServiceResponse> DeleteMedicalTestAsync(string userId, int medicalTestId);
         Task<OnlineSessionLinkDto> GetPatientOnlineSessionLinkAsync(string email, int appointmentId);
+
+
+
+        Task<IEnumerable<PatientMedicalHistoryMonthGroupDto>> GetMyMedicalHistoriesAsync(string userId, PatientMedicalHistoryQueryParams queryParams);
     }
 }

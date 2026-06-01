@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ServicesAbstraction;
 using Shared.DTos.AppointmentDTos;
+using Shared.DTos.MedicalHistoryDTos;
 using Shared.DTos.MedicalTestDTos;
 using Shared.DTos.PatientDTos;
 using Shared.DTos.ZoomDTos;
@@ -41,6 +42,22 @@ namespace Presentation.Controllers
             return Ok(result);
         }
 
+
+
+        [HttpGet("GetMyMedicalHistories")]
+        public async Task<ActionResult<IEnumerable<PatientMedicalHistoryMonthGroupDto>>> GetMyMedicalHistories(
+    [FromQuery] PatientMedicalHistoryQueryParams queryParams)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+
+            var result = await _serviceManger.PatientService
+                .GetMyMedicalHistoriesAsync(userId, queryParams);
+
+            return Ok(result);
+        }
 
 
 
