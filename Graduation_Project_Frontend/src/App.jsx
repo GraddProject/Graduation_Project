@@ -13,7 +13,7 @@ import DoctorViewAppointments from "./Pages/DoctorViewAppointments/DoctorViewApp
 import Prediction from "./Pages/Prediction/Prediction";
 
 import PatientDashboard from "./Pages/PatientDashboard/PatientDashboard";
-import PatientProfile from "./Pages/DoctorPatientProfile/DoctorPatientProfile";
+import DoctorPatientProfile from "./Pages/DoctorPatientProfile/DoctorPatientProfile";
 
 import AdminDashboard from "./Pages/AdminDashboard/AdminDashboard";
 import CreateUserAccount from "./Pages/CreateUserAccount/CreateUserAccount";
@@ -21,7 +21,10 @@ import CreateUserAccount from "./Pages/CreateUserAccount/CreateUserAccount";
 import ProtectedRoute from "./Components/ProtectedRoute/ProtectedRoute";
 import PredictionHistory from "./Pages/PredictionHistory/PredictionHistory";
 import DoctorProfile from "./Pages/DoctorProfile/DoctorProfile";
-import DoctorViewAppointments from "./Pages/DoctorViewAppointments/DoctorViewAppointments";
+import MedicalRecords from "./Pages/MedicalRecords/MedicalRecords";
+import UploadTests from "./Pages/UploadTests/UploadTests";
+import PatientProfile from "./Pages/PatientProfile/PatientProfile";
+
 
 
 function App() {
@@ -49,7 +52,7 @@ function App() {
               { path: "/doctor/prediction-history", element: <PredictionHistory /> },
               { path: "/doctor/profile", element: <DoctorProfile /> },
               { path: "/doctor/appointments", element: <DoctorViewAppointments /> },
-              { path: "/doctor/patient-profile", element: <DoctorPatientProfile /> }
+              {path: "/doctor/patient-profile/:id", element: <DoctorPatientProfile /> }
             ],
           },
 
@@ -58,6 +61,10 @@ function App() {
             element: <ProtectedRoute allowedRoles={["Patient"]} />,
             children: [
               { path: "/patient/dashboard", element: <PatientDashboard /> },
+              { path: "/patient/medical-records", element: <MedicalRecords /> },
+              { path: "/patient/upload-tests", element: <UploadTests /> },
+              { path: "/patient/profile", element: <PatientProfile/>}
+
             ],
           },
 

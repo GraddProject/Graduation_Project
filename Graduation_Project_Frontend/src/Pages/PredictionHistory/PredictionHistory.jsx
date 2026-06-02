@@ -27,114 +27,117 @@ export default function PredictionHistory() {
     const [selectedPatientId, setSelectedPatientId] = useState(null);
 
     const getAllPredictions = async () => {
-    try {
-      setLoading(true);
-
-      const { data } = await axios.get(
-      "https://her-journey-1044023551709.us-central1.run.app/api/Doctor/PredictionsList",
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-      );
-
-      const list = Array.isArray(data) ? data : [];
-
-      const formattedPredictions = list.map((predication) => ({
-        id: predication.predictionRecordId,
-        patientId: predication.patientId,
-        medicalHistoryId: predication.medicalHistoryId,
-        patientName: predication.patientName,
-        patientImage: predication.profileImageUrl,
-        predicationType: predication.type,
-        predicationDate: predication.date,
-        predicationResult: predication.result,
-        predicationConfidence: predication.confidence,
-      }));
-
-      setPredictions(formattedPredictions);
-      console.log(formattedPredictions);
-
-    } catch (error) {
-      console.error("Failed to fetch predictions:", error);
-    } finally {
-      setLoading(false);
-    }
-    };
-      const getPatient = async () => {
-  try {
-    const { data } = await axios.get(
-      "https://her-journey-1044023551709.us-central1.run.app/api/Doctor/GetPatientById",
-      {
-        params: { patientId: id },
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
-
-    const patientData = data?.data || data || {};
-
-    const formattedPatient = {
-      id: patientData.patientId,
-      name: patientData.displayName,
-      week: patientData.pregnancyWeek,
-      imageUrl: patientData.profileImageUrl
-    };
-
-    setPatient(formattedPatient);
-    console.log(patientData)
-
-  } catch (error) {
-    console.error("Failed to fetch patient:", error);
-    setPatient(null);
-  }
-  };
-
-    const getRiskDashboard = async () => {
-    try {
-      const { data } = await axios.get(
-        "https://her-journey-1044023551709.us-central1.run.app/api/Doctor/risk-dashboard",
+      try {
+        setLoading(true);
+        const { data } = await axios.get(
+          "https://her-journey-1044023551709.us-central1.run.app/api/Doctor/PredictionsList",
         {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         }
-      );
-      setRiskDashboard(data);
-      console.log("Risk Dashboard:", data);
+        );
+
+        const list = Array.isArray(data) ? data : [];
+
+        const formattedPredictions = list.map((predication) => ({
+          id: predication.predictionRecordId,
+          patientId: predication.patientId,
+          medicalHistoryId: predication.medicalHistoryId,
+          patientName: predication.patientName,
+          patientImage: predication.profileImageUrl,
+          predicationType: predication.type,
+          predicationDate: predication.date,
+          predicationResult: predication.result,
+          predicationConfidence: predication.confidence,
+        }));
+
+        setPredictions(formattedPredictions);
+        console.log(formattedPredictions);
+
+      } catch (error) {
+        console.error("Failed to fetch predictions:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+
+    const getPatient = async () => {
+      try {
+        const { data } = await axios.get(
+          "https://her-journey-1044023551709.us-central1.run.app/api/Doctor/GetPatientById",
+        {
+          params: { patientId: selectedPatientId },
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+        );
+
+        const patientData = data?.data || data || {};
+
+        const formattedPatient = {
+          id: patientData.patientId,
+          name: patientData.displayName,
+          week: patientData.pregnancyWeek,
+          imageUrl: patientData.profileImageUrl
+        };
+
+        setPatient(formattedPatient);
+        console.log(patientData)
+
+      } catch (error) {
+        console.error("Failed to fetch patient:", error);
+        setPatient(null);
+      }
+    };
+
+    const getRiskDashboard = async () => {
+      try {
+        const { data } = await axios.get(
+          "https://her-journey-1044023551709.us-central1.run.app/api/Doctor/risk-dashboard",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+        );
+        setRiskDashboard(data);
+        console.log("Risk Dashboard:", data);
       } catch (error) {
         console.error("Failed to fetch risk dashboard:", error);
       } 
     };
 
-      const handleDeleteMedicalHistory = async (medicalId) => {
-  try {
-    await axios.delete(
-      `https://her-journey-1044023551709.us-central1.run.app/api/Doctor/patients/${id}/medical-histories/${medicalId}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
+    console.log("selectedPatientId =", selectedPatientId);
 
-    setPredictions(prev =>
-      prev.filter(item => item.medicalHistoryId !== medicalId)
-    );
+    const handleDeleteMedicalHistory = async (medicalId) => {
+      try {
+        await axios.delete(
+          `https://her-journey-1044023551709.us-central1.run.app/api/Doctor/patients/${selectedPatientId}/medical-histories/${medicalId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+        );
 
-    setSelectedMedicalHistoryId(null);
+        setPredictions(prev =>
+          prev.filter(item => item.medicalHistoryId !== medicalId)
+        );
+
+        setSelectedMedicalHistoryId(null);
 
   } catch (error) {
     console.log(error);
   }
-  };
+    };
 
-  const handleDeleteMedicine = async (medicalId, prescriptionId) => {
-    try {
+    const handleDeleteMedicine = async (medicalId, prescriptionId) => {
+      try {
       await axios.delete(
-      `https://her-journey-1044023551709.us-central1.run.app/api/Doctor/patients/${id}/medical-histories/${medicalId}/prescriptions/${prescriptionId}`,
+      `https://her-journey-1044023551709.us-central1.run.app/api/Doctor/patients/${selectedPatientId}/medical-histories/${medicalId}/prescriptions/${prescriptionId}`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -148,6 +151,7 @@ export default function PredictionHistory() {
   };
 
   const handelUpdateMedicalHistory = (updated) => {
+
     setPredictions(prev =>
       prev.map(item =>
       item.medicalHistoryId === updated.id
@@ -170,14 +174,18 @@ export default function PredictionHistory() {
         if (token) {
             getAllPredictions();
             getRiskDashboard();
-            getPatient();
         }
     }, [token]);
+    useEffect(() => {
+    if (token && selectedPatientId) {
+        getPatient();
+    }
+}, [selectedPatientId, token]);
 
 
     const visiblePredictions = showAll
     ? predictions
-    : predictions.slice(0, 10);
+    : predictions.slice(0, 7);
 
     return <>
      <div className='px-8 py-4'>
@@ -227,7 +235,7 @@ export default function PredictionHistory() {
                 </div>
             </div>
             {visiblePredictions.map((prediction , index) => (
-              <PredictionPatientCard key={index} {...prediction} onViewDetails={() => setSelectedPredictionId(prediction.id)}  showMedical={(medicalHistoryId) => {setSelectedMedicalHistoryId(medicalHistoryId); setSelectedPatientId(prediction.patientId); }} />
+              <PredictionPatientCard key={index} {...prediction} onViewDetails={() => setSelectedPredictionId(prediction.id)}  showMedical={(medicalHistoryId , patientId) => { setSelectedMedicalHistoryId(medicalHistoryId); setSelectedPatientId(patientId);}} />
             ))}
             </div>
           }

@@ -49,7 +49,7 @@ export default function CreatPass() {
   async function handleSetPassword(values) {
     setApiError("");
     const options = {
-      url: `https://her-journey-161730893876.us-central1.run.app/api/Account/ConfirmEmail`,
+      url: `https://her-journey-669913381811.us-central1.run.app/api/Account/ConfirmEmail`,
       method: "POST",
       data: {
         userId,

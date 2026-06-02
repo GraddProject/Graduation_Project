@@ -18,7 +18,7 @@ export default function Header() {
     "/doctor/appointments": "Appointments",
     "/doctor/prediction-history": "Prediction History",
     "/doctor/profile": "My Profile",
-
+  
     "/patient/dashboard": "Dashboard",
     "/patient/medical-records": "Medical Records",
     "/patient/upload-tests": "Upload Tests",
@@ -35,9 +35,10 @@ export default function Header() {
     title = "Prediction History";
   }
 
-  if (location.pathname.includes("/patientProfile")) {
-    title = user?.role === "Doctor" ? "Patient Profile" : "My Profile";
+  if (location.pathname.includes("/doctor/patient-profile")) {
+    title = "Patient Profile";
   }
+
 
   title = title || "HerJourney";
   const hideBack =
@@ -61,7 +62,7 @@ export default function Header() {
               <Bell size={18} />
               <span className="absolute top-1.5 right-2 w-2.5 h-2.5 bg-red-400 rounded-full" />
             </button>
-  
+            <div className='cursor-pointer' onClick={()=>{ navigate("/patient/profile")}}>
             {user?.profileImageUrl ? (
               <img
                 src={user.profileImageUrl}
@@ -70,6 +71,7 @@ export default function Header() {
               />
               ) : getInitials(user?.displayName) 
             }
+            </div>
           </div>
         </header>
   

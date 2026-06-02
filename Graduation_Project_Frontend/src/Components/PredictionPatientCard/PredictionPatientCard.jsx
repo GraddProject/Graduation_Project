@@ -1,9 +1,11 @@
 import React from 'react';
 import ProgressBar from '../ProgressBar/ProgressBar';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 export default function PredictionPatientCard({
   patientImage,
   patientName,
+  patientId,
   predicationType,
   predicationDate,
   predicationConfidence,
@@ -12,7 +14,9 @@ export default function PredictionPatientCard({
   medicalHistoryId,
 }) {
 
+
   const [showNoHistoryModal, setShowNoHistoryModal] = useState(false);
+  const navigate = useNavigate();
 
   const getLevelFromConfidence = (confidence) => {
     const value = Number(confidence);
@@ -42,7 +46,7 @@ export default function PredictionPatientCard({
   return (
     <div className='bg-white w-full rounded-xl shadow mt-2 pl-5 py-2 grid grid-cols-[1.4fr_1.2fr_1fr_1.2fr_1.5fr_2fr] items-center'>
 
-      <div className="flex gap-3 items-center"> 
+      <div className="flex gap-3 items-center cursor-pointer" onClick={() => navigate(`/doctor/patient-profile/${patientId}`)}> 
         <img
           src={patientImage}
           className="w-10 h-10 rounded-full"
@@ -95,7 +99,7 @@ export default function PredictionPatientCard({
             setShowNoHistoryModal(true);
             return;
           }
-          showMedical(medicalHistoryId);
+          showMedical(medicalHistoryId , patientId);
           }} >
           Medical History
         </button>

@@ -50,6 +50,7 @@ export default function Login() {
       let { data } = await axios.request(options);
       if (data.token) {
         localStorage.setItem("token", data.token);
+
         const role = data.role[0];
 
         let profile = null;
@@ -57,7 +58,7 @@ export default function Login() {
         if (role === "Doctor") {
           profile = await getDoctorProfile(data.token);
         } else if (role === "Patient") {
-            profile = await getPatientProfile(data.token);
+          profile = await getPatientProfile(data.token);
         }
     
         const userData = {

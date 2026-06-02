@@ -91,7 +91,7 @@ export default function MedicalRecordForm({ formData , onSuccess, onUpdatedHisto
             },
             {
                 params:{
-                    PatientId : id,
+                    PatientId : formData.patientId,
                     MedicalHistoryId: formData.medicalHistoryId
                 },
                 headers: {
@@ -121,7 +121,7 @@ export default function MedicalRecordForm({ formData , onSuccess, onUpdatedHisto
       },
       {
         params: {
-          PatientId: id,
+          PatientId: formData.patientId,
           MedicalHistoryId: formData.medicalHistoryId,
           PreScriptionId: formData.prescriptionId,
         },
@@ -168,7 +168,7 @@ export default function MedicalRecordForm({ formData , onSuccess, onUpdatedHisto
       <div className='fixed inset-0 bg-black/40 backdrop-blur-sm flex justify-center items-center z-50 p-4'>
         <div className='bg-white rounded-2xl shadow-[0px_2px_4px_#00000012] w-full max-w-lg px-4 py-5 max-h-[96vh] overflow-y-auto'>
             <div className='flex items-center justify-between pb-3 border-b '>
-                <h2 className='text-smfont-bold'>{ formData.mode === MODES.CREATE || formData.mode === MODES.CREATE_FROM_PREDICTION ? "Add Medical Record" : formData.mode === MODES.EDIT_HISTORY ? "Edit Medical Record" : "Edit Prescription"}</h2>
+                <h2 className='text-smfont-bold'>{ formData.mode === MODES.CREATE || formData.mode === MODES.CREATE_FROM_PREDICTION  || formData.mode === MODES.PREDICTION ? "Add Medical Record" : formData.mode === MODES.EDIT_HISTORY ? "Edit Medical Record" : "Edit Prescription"}</h2>
                 <div className="flex justify-end" onClick={() => onClose(false)}>
                     <X size={20} className="text-[#8A9A8AFF] cursor-pointer" />
                 </div>
@@ -247,7 +247,7 @@ export default function MedicalRecordForm({ formData , onSuccess, onUpdatedHisto
               )}
             <div className='flex flex-row gap-3 mt-4'>
                 <button className='w-8/12 bg-[#4A6B4EFF] text-white rounded-xl border-2 border-[#4A6B4EFF]  py-1 ' onClick={() => { switch (formData.mode) { case MODES.CREATE: case MODES.PREDICTION: addMedicalHistory(); break; case MODES.EDIT_HISTORY: updateMedicalHistory(); break; case MODES.EDIT_PRESCRIPTION: updatePrescription(); break; default: break; } }}>
-                   { formData.mode === MODES.CREATE || formData.mode === MODES.CREATE_FROM_PREDICTION ? "Save Medical Record" : "Save Updates"}
+                   { formData.mode === MODES.CREATE || formData.mode === MODES.CREATE_FROM_PREDICTION || formData.mode === MODES.PREDICTION ? "Save Medical Record" : "Save Updates"}
                 </button >
 
                 <button onClick={() => onClose(false)} className='w-4/12 bg-[#F3F4F6FF] text-[#565D6DFF] rounded-xl font-medium border-2  px-2  py-1 '>

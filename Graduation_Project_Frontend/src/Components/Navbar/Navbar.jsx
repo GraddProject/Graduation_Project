@@ -3,9 +3,12 @@ import { NavLink } from "react-router-dom";
 import { useContext } from "react";
 import { UserContext } from "../context/User.context";
 import { getInitials } from "../../helpers/getInitials";
+import { useNavigate } from "react-router-dom";
 
 
 export default function Navbar() {
+
+  const navigate = useNavigate();
   
 
   const { user } = useContext(UserContext);
@@ -18,11 +21,11 @@ export default function Navbar() {
   ];
 
   const patientLinks = [
-    { label: "Dashboard", icon: LayoutDashboard, to: "/patient" },
+    { label: "Dashboard", icon: LayoutDashboard, to: "/patient/dashboard" },
     { label: "Medical Records", icon: FileText, to: "/patient/medical-records" },
     { label: "Upload Tests", icon: Upload, to: "/patient/upload-tests" },
-    { label: "Prediction Reports", icon: Sparkles, to: "/patient/predictions" },
     { label: "Profile Settings", icon: Settings, to: "/patient/profile" },
+
   ];
 
     const navItems =
@@ -62,7 +65,7 @@ export default function Navbar() {
             </nav>
           </div>
           <div className="border-t border-t-[#FFFFFF1A] mt-auto">
-            <div className="flex flex-row gap-2 items-center mt-3">
+            <div className="flex flex-row gap-2 items-center mt-3 cursor-pointer" onClick={()=>{ navigate("/patient/profile")}}>
               <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
                 {user?.profileImageUrl ? (
                   <img

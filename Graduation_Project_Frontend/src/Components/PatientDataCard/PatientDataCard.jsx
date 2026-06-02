@@ -28,7 +28,7 @@ export default function PatientDataCard({ view = "grid" , patient }) {
   const navigate = useNavigate();
   
   const handleClick = () => {
-    navigate(`/patientProfile/${patient.id}`);
+    navigate(`/doctor/patient-profile/${patient.id}`);
   };
 
   

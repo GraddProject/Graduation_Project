@@ -119,8 +119,6 @@ export default function Prediction() {
   const [previewFile, setPreviewFile] = useState(null);
   const [predictionRecordId, setPredictionRecordId] = useState(null);
   const [showMedical , setShowMedical] = useState(null);
-  const [riskDashboard, setRiskDashboard] = useState([]);
-
 
   const getPatient = async () => {
   try {
@@ -307,6 +305,7 @@ export default function Prediction() {
         id: predication.predictionRecordId,
         medicalHistoryId: predication.medicalHistoryId,
         patientName: predication.patientName,
+        patientId: predication.patientId,
         patientImage: predication.profileImageUrl,
         predicationType: predication.type,
         predicationDate: predication.date,
@@ -323,6 +322,9 @@ export default function Prediction() {
       setLoading(false);
     }
   };
+
+
+  
 
   const handleDeleteMedicalHistory = async (medicalId) => {
   try {
@@ -381,33 +383,11 @@ export default function Prediction() {
     console.log(medicalId, updatedPrescriptions);
   };
 
-  const getRiskDashboard = async () => {
-    try {
-      const { data } = await axios.get(
-        "https://her-journey-1044023551709.us-central1.run.app/api/Doctor/risk-dashboard",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      setRiskDashboard(data);
-      console.log("Risk Dashboard:", data);
-      } catch (error) {
-        console.error("Failed to fetch risk dashboard:", error);
-      } 
-  };
-
-
   useEffect(() => {
     if (!token || !id) return;
     getPatient();
     getLabTests();
   }, [id, token]);
-  
-  useEffect(() => {
-    getRiskDashboard();
-  }, [token]);
 
   useEffect(() => {
     if (patient) {
@@ -423,10 +403,7 @@ export default function Prediction() {
   ? predictions
   : predictions.slice(0, 6);
   
-  const gdmData = riskDashboard.find(item => item.type === "GDM");
-  const preeclampsiaData = riskDashboard.find(
-    item => item.type === "Preeclampsia"
-  );
+
   
   return <>
     <div className='w-full '>

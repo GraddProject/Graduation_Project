@@ -202,7 +202,7 @@ export default function DetailedMedicalRecord({ medicalHistoryId, patientId , on
 
     {formData.open && (
       <MedicalRecordForm
-      formData={formData}
+      formData={{...formData , patientId}}
 
       onUpdatedHistory={(updated) => {
         setMedicalRecord(prev => ({

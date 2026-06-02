@@ -415,24 +415,24 @@ export default function DoctorPatientProfile() {
             </div>
             </div>
             <div className='flex flex-row items-center gap-2 mt-1'>
-              <div className='bg-[#E8F5E8FF] border border-1 rounded-2xl py-1 px-3 flex items-center '>
-                <p className='text-[#4a724d] text-xs font-[600]' >BloodType: {patient.bloodType}</p>
+              <div className='bg-[#eef4ee] border border-[#c8ddc8] border-1 rounded-2xl py-1 px-3 flex items-center '>
+                <p className='text-[#2d4a2d] text-xs ' >BloodType: {patient.bloodType}</p>
               </div>
               
-              <div className='bg-[#E8F5E8FF] border border-1 rounded-2xl py-1 px-3 flex items-center '>
-                <p className='text-[#4a724d] text-xs font-[600]' >Age: {patient.age} Year</p>
+              <div className='bg-[#eef4ee] border border-[#c8ddc8] border-1 rounded-2xl py-1 px-3 flex items-center '>
+                <p className='text-[#2d4a2d] text-xs ' >Age: {patient.age} Year</p>
               </div>
 
-              <div className='bg-[#E8F5E8FF] border border-1 rounded-2xl py-1 px-3 flex items-center '>
-                <p className='text-[#4a724d] text-xs font-[600]' >Height: {patient.height} cm</p>
+              <div className='bg-[#eef4ee] border border-[#c8ddc8] border-1 rounded-2xl py-1 px-3 flex items-center '>
+                <p className='text-[#2d4a2d] text-xs ' >Height: {patient.height} cm</p>
               </div>
 
-              <div className='bg-[#E8F5E8FF] border border-1 rounded-2xl py-1 px-3 flex items-center '>
-                <p className='text-[#4a724d] text-xs font-[600]' >Weight: {patient.weight} kg</p>
+              <div className='bg-[#eef4ee] border border-[#c8ddc8] border-1 rounded-2xl py-1 px-3 flex items-center '>
+                <p className='text-[#2d4a2d] text-xs ' >Weight: {patient.weight} kg</p>
               </div>
               
-              <div className='bg-[#E8F5E8FF] border border-1 rounded-2xl py-1 px-3 flex items-center '>
-                <p className='text-[#4a724d] text-xs font-[600]' >Num Of Pregnancies: {patient.numberofPregnancies}</p>
+              <div className='bg-[#eef4ee] border border-[#c8ddc8] border-1 rounded-2xl py-1 px-3 flex items-center '>
+                <p className='text-[#2d4a2d] text-xs ' >Num Of Pregnancies: {patient.numberofPregnancies}</p>
               </div>
             </div>
           </div>
