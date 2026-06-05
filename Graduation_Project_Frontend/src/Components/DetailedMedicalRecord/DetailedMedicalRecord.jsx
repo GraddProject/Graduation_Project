@@ -128,6 +128,7 @@ export default function DetailedMedicalRecord({ medicalHistoryId, patientId , on
                   key={index}
                   name={p?.medicationName}
                   dosage={p?.dosage}
+                  mode = "doctorview"
                   duration={p?.duration}
                   instructions={p?.instructions}
                   onDelete={async () => {

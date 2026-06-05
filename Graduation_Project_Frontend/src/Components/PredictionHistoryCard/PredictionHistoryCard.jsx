@@ -9,8 +9,8 @@ export default function PredictionHistoryCard({month , day, predictionType , ris
     backgroundColor: "#E6F4EA",
   },
   Medium: {
-    color: "#DAA520",
-    backgroundColor: "#FFF4CC",
+    color: "#DAA520FF",
+    backgroundColor: "#fff8de",
   },
   High: {
     color: "#D7263D",
@@ -31,7 +31,7 @@ export default function PredictionHistoryCard({month , day, predictionType , ris
 
     <div className='flex items-center justify-between'>
       <div className='flex flex-row items-center gap-2'>
-      <div className='py-1 px-3 bg-[#E8F5E8FF] rounded-3xl text-[#4a724d] font-medium '>
+      <div className='py-1 px-3 bg-[#eef6f0] rounded-3xl text-[#1A2E1CFF] font-medium '>
          <p className='text-sm'>{predictionType}</p>
       </div>
       

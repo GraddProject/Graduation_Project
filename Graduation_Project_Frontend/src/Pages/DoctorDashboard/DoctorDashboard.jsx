@@ -141,6 +141,8 @@ export default function DoctorDashboard() {
   useEffect(() => {
     getDashboardCardData();
   }, [token]);
+
+
   const totalPages = Math.ceil(totalItems / pageSize);
 
   return (

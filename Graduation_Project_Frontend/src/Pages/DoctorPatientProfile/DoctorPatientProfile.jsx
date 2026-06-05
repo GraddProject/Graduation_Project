@@ -262,7 +262,7 @@ export default function DoctorPatientProfile() {
       } catch (error) {
         console.log(error);
       }
-    };
+  };
   
   const handelDownloadTest = async (medicalTestId, fileName) => {
     try {
@@ -479,6 +479,7 @@ export default function DoctorPatientProfile() {
               {medicalHistory.map((history, index) => (
                 <MedicalHistoryCard
                   key={index}
+                  mode= {"doctorview"}
                   MedicalHistory = {history}
                   PatientId = {id}
                   MedicalId = {history.medicalId}
@@ -503,7 +504,7 @@ export default function DoctorPatientProfile() {
             <div className='header w-full bg-[#F5F0FAFF] px-3 py-3 flex flex-row items-center justify-between'>
               <div className='flex flex-row items-center gap-2'>
                 <FlaskConical size={20} className='text-[#9B7CB6FF]' />
-                <h2 className='#1A2E1CFF'>Lab Tests</h2>
+                <h2 className='text-[#1A2E1CFF]'>Lab Tests</h2>
 
                 <div className='px-2 py-0.5 rounded-2xl bg-[#9B7CB6FF] ml-1'>
                   <p className='text-white font-semibold text-xs'>6</p>

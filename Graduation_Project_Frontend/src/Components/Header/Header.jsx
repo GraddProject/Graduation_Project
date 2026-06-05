@@ -20,8 +20,8 @@ export default function Header() {
     "/doctor/profile": "My Profile",
   
     "/patient/dashboard": "Dashboard",
-    "/patient/medical-records": "Medical Records",
-    "/patient/upload-tests": "Upload Tests",
+    "/patient/medical-records": "My Medical Records",
+    "/patient/upload-tests": "Upload Medical Tests",
     "/patient/predictions": "Prediction Reports",
     "/patient/profile": "My Profile",
   };

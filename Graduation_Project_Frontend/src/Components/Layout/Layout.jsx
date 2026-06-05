@@ -7,7 +7,7 @@ export default function Layout() {
     <div className="flex min-h-screen">
       <Navbar />
 
-      <div className="flex flex-col flex-1 ">
+      <div className="flex flex-col flex-1 min-w-0 ">
         <Header />
 
         <main className=" bg-gray-50 flex-1">

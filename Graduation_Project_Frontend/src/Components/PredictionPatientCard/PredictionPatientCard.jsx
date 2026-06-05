@@ -31,17 +31,17 @@ export default function PredictionPatientCard({
 
   const color =
     riskLevel === "low"
-      ? "#4A6B4EFF"
+      ? "#4A6B4E"
       : riskLevel === "medium"
       ? "#DAA520FF"
-      : "#C97272FF";
+      : "#D7263D";
 
   const lightColor =
     riskLevel === "low"
-      ? "#F4FBF4FF"
+      ? "#E6F4EA"
       : riskLevel === "medium"
-      ? "#E8C5B11A"
-      : "#D7263D1A";
+      ? "#fff8de"
+      : "#FDEAEA";
 
   return (
     <div className='bg-white w-full rounded-xl shadow mt-2 pl-5 py-2 grid grid-cols-[1.4fr_1.2fr_1fr_1.2fr_1.5fr_2fr] items-center'>
