@@ -697,7 +697,8 @@ namespace Services.PatientServices
                 PregnancyLabel = BuildPregnancyLabel(trimester, pregnancyWeek),
                 Trimester = trimester,
                 PregnancyWeek = pregnancyWeek,
-                DaysToEstimatedDueDate = CalculateDaysToDueDate(medicalInfo, pregnancyWeek),
+                PregnancyTipTitle = BuildPregnancyTipTitle(trimester),
+                PregnancyTip = BuildPregnancyTip(trimester),
 
                 BloodType = medicalInfo.BloodType,
                 HeightCm = medicalInfo.Height,
@@ -1102,23 +1103,6 @@ namespace Services.PatientServices
             return $"{trimester} - Week {pregnancyWeek.Value}";
         }
 
-        private static int? CalculateDaysToDueDate(MedicalData medicalInfo, int? pregnancyWeek)
-        {
-            if (medicalInfo.PregnancyStartDate.HasValue)
-            {
-                var today = DateOnly.FromDateTime(DateTime.Today);
-                var dueDate = medicalInfo.PregnancyStartDate.Value.AddDays(280);
-                var days = dueDate.DayNumber - today.DayNumber;
-
-                return Math.Max(0, days);
-            }
-
-            if (pregnancyWeek.HasValue)
-                return Math.Max(0, (40 - pregnancyWeek.Value) * 7);
-
-            return null;
-        }
-
         private static decimal? ToPercentage(decimal? confidence)
         {
             if (!confidence.HasValue)
@@ -1143,6 +1127,35 @@ namespace Services.PatientServices
                 return "Moderate Risk";
 
             return "Low Risk";
+        }
+
+
+        private static string? BuildPregnancyTipTitle(string? trimester)
+        {
+            return trimester switch
+            {
+                "1st Trimester" => "Your baby is starting to grow",
+                "2nd Trimester" => "Your baby is becoming more active",
+                "3rd Trimester" => "Your baby is getting ready for birth",
+                _ => null
+            };
+        }
+
+        private static string? BuildPregnancyTip(string? trimester)
+        {
+            return trimester switch
+            {
+                "Trimester 1" or "1st Trimester" =>
+                    "Focus on rest, hydration, and taking your prenatal vitamins regularly.",
+
+                "Trimester 2" or "2nd Trimester" =>
+                    "This is a good time to track your baby’s movement and keep up with your routine checkups.",
+
+                "Trimester 3" or "3rd Trimester" =>
+                    "Prepare your birth plan, monitor baby movements, and contact your doctor if you notice anything unusual.",
+
+                _ => null
+            };
         }
 
 

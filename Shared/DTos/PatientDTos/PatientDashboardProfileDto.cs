@@ -18,7 +18,10 @@ namespace Shared.DTos.PatientDTos
         public string? PregnancyLabel { get; set; }
         public string? Trimester { get; set; }
         public int? PregnancyWeek { get; set; }
-        public int? DaysToEstimatedDueDate { get; set; }
+
+        public string? PregnancyTipTitle { get; set; }
+        public string? PregnancyTip { get; set; }
+
 
         public string? BloodType { get; set; }
         public int? HeightCm { get; set; }
