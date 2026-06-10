@@ -74,14 +74,16 @@ namespace Presentation.Controllers
         [HttpGet("last-visit-summary")]
         public async Task<ActionResult<PatientLastVisitSummaryDto>> GetLastVisitSummary()
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            return Ok(null);
 
-            var result = await _serviceManger.PatientService.GetLastVisitSummaryAsync(userId!);
+            //var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            if (result is null)
-                return NotFound("No last visit summary found.");
+            //var result = await _serviceManger.PatientService.GetLastVisitSummaryAsync(userId!);
 
-            return Ok(result);
+            //if (result is null)
+            //    return NotFound("No last visit summary found.");
+
+            //return Ok(result);
         }
 
 
@@ -113,7 +115,7 @@ namespace Presentation.Controllers
         {
             var Email = User.FindFirstValue(ClaimTypes.Email);
 
-            var result = await _serviceManger.PatientService.BookAppointmentAsync(Email!,dto);
+            var result = await _serviceManger.PatientService.BookAppointmentAsync(Email!, dto);
 
             return Ok(result);
         }
