@@ -822,6 +822,92 @@ namespace Services.PatientServices
 
 
 
+        public async Task<IEnumerable<PatientPrescriptionDto>> GetMyPrescriptionsAsync(string userId)
+        {
+            if (string.IsNullOrWhiteSpace(userId))
+                throw new UnauthorizedException();
+
+            var patientRepo = _unitOfWork.GetRepository<Patient>();
+            var medicalHistoryRepo = _unitOfWork.GetRepository<MedicalHistory>();
+
+            var patient = await patientRepo.GetByIdAsync(new PatientByIdSpecification(userId));
+
+            if (patient is null)
+                throw new PatientNotFoundException(userId);
+
+            var histories = await medicalHistoryRepo.GetAllAsync(
+                new PatientMedicalHistoriesSpecification(patient.Id));
+
+            return histories
+                .SelectMany(h => h.PreScriptions)
+                .Select(p => new PatientPrescriptionDto
+                {
+                    MedicationName = p.MedicationName,
+                    Dosage = p.Dosage,
+                    Duration = p.Duration,
+                    Instructions = p.Instructions
+                })
+                .ToList();
+        }
+
+
+
+
+
+        public async Task<PatientLastVisitSummaryDto?> GetLastVisitSummaryAsync(string userId)
+        {
+            if (string.IsNullOrWhiteSpace(userId))
+                throw new UnauthorizedException();
+
+            var patientRepo = _unitOfWork.GetRepository<Patient>();
+            var appointmentRepo = _unitOfWork.GetRepository<Appointment>();
+            var medicalHistoryRepo = _unitOfWork.GetRepository<MedicalHistory>();
+
+            var patient = await patientRepo.GetByIdAsync(new PatientByIdSpecification(userId));
+
+            if (patient is null)
+                throw new PatientNotFoundException(userId);
+
+            await CompleteExpiredConfirmedAppointmentsForPatientAsync(patient.Id);
+
+            var appointments = await appointmentRepo.GetAllAsync(
+                new PatientLastCompletedAppointmentSpecification(patient.Id));
+
+            var lastAppointment = appointments.FirstOrDefault();
+
+            if (lastAppointment is null)
+                return null;
+
+            var visitDayStart = lastAppointment.AvailabilitySlot.StartAt.Date;
+            var visitDayEnd = visitDayStart.AddDays(1);
+
+            var histories = await medicalHistoryRepo.GetAllAsync(
+                new PatientLastVisitMedicalHistorySpecification(
+                    patient.Id,
+                    lastAppointment.DoctorId,
+                    visitDayStart,
+                    visitDayEnd));
+
+            var lastHistory = histories.FirstOrDefault();
+
+            if (lastHistory is null)
+                return null;
+
+            return new PatientLastVisitSummaryDto
+            {
+                MedicalHistoryId = lastHistory.Id,
+
+                Date = lastAppointment.AvailabilitySlot.StartAt.ToString(
+                    "MMM dd, yyyy",
+                    CultureInfo.InvariantCulture),
+
+                Diagnosis = lastHistory.Diagnosis,
+                VitalSigns = lastHistory.VitalSigns,
+                Notes = lastHistory.Notes,
+            };
+        }
+
+
 
 
         private static string BuildMedicalTestObjectName(int patientId, string fileName)

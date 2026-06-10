@@ -49,5 +49,10 @@ namespace ServicesAbstraction.PatientAbstraction
 
 
         Task<IEnumerable<PatientMedicalHistoryMonthGroupDto>> GetMyMedicalHistoriesAsync(string userId, PatientMedicalHistoryQueryParams queryParams);
+
+
+        Task<IEnumerable<PatientPrescriptionDto>> GetMyPrescriptionsAsync(string userId);
+
+        Task<PatientLastVisitSummaryDto?> GetLastVisitSummaryAsync(string userId);
     }
 }

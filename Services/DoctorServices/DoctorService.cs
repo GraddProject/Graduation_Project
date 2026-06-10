@@ -23,6 +23,7 @@ using Shared.DTos.PaginationDTo.DoctorDashBoardDTos;
 using Shared.DTos.PatientDTos;
 using Shared.DTos.ZoomDTos;
 using Shared.ErrorModels;
+using System.Globalization;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 using AppointmentType = DomainLayer.Models.AppointmentType;
 
@@ -1560,6 +1561,105 @@ namespace Services.DoctorServices
         }
 
 
+
+        public async Task<IEnumerable<PatientMedicalHistoryMonthGroupDto>> GetPatientMedicalHistoriesTimelineAsync(string Email, int PatientId, PatientMedicalHistoryQueryParams queryParams)
+        {
+            if (string.IsNullOrWhiteSpace(Email))
+                throw new UnauthorizedException();
+
+            queryParams ??= new PatientMedicalHistoryQueryParams();
+
+            var DRepo = _unitOfWork.GetRepository<Doctor>();
+            var PRepo = _unitOfWork.GetRepository<Patient>();
+            var MRepo = _unitOfWork.GetRepository<MedicalHistory>();
+
+            var doctor = await DRepo.GetByIdAsync(new DoctorDetailsSpecification(Email));
+
+            if (doctor is null)
+                throw new DoctorNotFoundException("Doctor not found.");
+
+            var patient = await PRepo.GetByIdAsync(
+                new PatientsBelongToSpecifcDoctor(PatientId, doctor.Id));
+
+            if (patient is null)
+                throw PatientNotFoundException.Belong(
+                    "Patient not found or does not belong to this doctor.");
+
+            var histories = await MRepo.GetAllAsync(
+                new PatientMedicalHistoriesSpecification(
+                    PatientId,
+                    queryParams.HasPrediction,
+                    queryParams.Sort));
+
+            var items = histories.Select(h =>
+            {
+                var prediction = h.PredictionRecord;
+
+                return new
+                {
+                    MonthKey = new DateTime(h.CreatedAt.Year, h.CreatedAt.Month, 1),
+
+                    Item = new PatientMedicalHistoryTimelineItemDto
+                    {
+                        MedicalHistoryId = h.Id,
+
+                        Diagnosis = h.Diagnosis,
+                        VitalSigns = h.VitalSigns,
+                        Notes = h.Notes,
+
+                        CreatedAt = h.CreatedAt,
+                        Date = h.CreatedAt.ToString("MMM dd, yyyy", CultureInfo.InvariantCulture),
+                        Time = h.CreatedAt.ToString("hh:mm tt", CultureInfo.InvariantCulture),
+
+                        HasPrediction = prediction is not null,
+
+                        Prediction = prediction is null
+                            ? null
+                            : new PatientMedicalHistoryPredictionDto
+                            {
+                                PredictionRecordId = prediction.Id,
+                                Type = prediction.Type.ToString(),
+                                Result = prediction.Result,
+                                RiskLevel = GetTimelineRiskLevel(prediction.Confidence),
+                                ConfidencePercentage = ToPercentage(prediction.Confidence) ?? 0,
+                                CreatedAt = prediction.CreatedAt
+                            },
+
+                        Prescriptions = h.PreScriptions
+                            .OrderByDescending(p => p.CreatedAt)
+                            .Select(p => new PatientMedicalHistoryPrescriptionDto
+                            {
+                                PrescriptionId = p.Id,
+                                MedicationName = p.MedicationName,
+                                Dosage = p.Dosage,
+                                Duration = p.Duration,
+                                Instructions = p.Instructions,
+                                CreatedAt = p.CreatedAt
+                            })
+                            .ToList()
+                    }
+                };
+            }).ToList();
+
+            var grouped = items
+                .GroupBy(x => x.MonthKey)
+                .Select(g => new PatientMedicalHistoryMonthGroupDto
+                {
+                    Month = g.Key.ToString("MMMM yyyy", CultureInfo.InvariantCulture),
+                    Items = queryParams.Sort == PatientMedicalHistorySort.Oldest
+                        ? g.Select(x => x.Item).OrderBy(x => x.CreatedAt).ToList()
+                        : g.Select(x => x.Item).OrderByDescending(x => x.CreatedAt).ToList()
+                });
+
+            return queryParams.Sort == PatientMedicalHistorySort.Oldest
+                ? grouped.OrderBy(g => DateTime.ParseExact(g.Month, "MMMM yyyy", CultureInfo.InvariantCulture)).ToList()
+                : grouped.OrderByDescending(g => DateTime.ParseExact(g.Month, "MMMM yyyy", CultureInfo.InvariantCulture)).ToList();
+        }
+
+
+
+
+
         public async Task<IEnumerable<MedicalTestListDto>> GetPatientMedicalTestsAsync(string Email, int PatientId)
         {
             if (string.IsNullOrWhiteSpace(Email))
@@ -2100,6 +2200,32 @@ namespace Services.DoctorServices
             var endAt = startAt.Add(appointment.AvailabilitySlot.Duration);
 
             return now >= startAt.AddMinutes(-15) && now <= endAt;
+        }
+
+        private static decimal? ToPercentage(decimal? confidence)
+        {
+            if (!confidence.HasValue)
+                return null;
+
+            return confidence.Value <= 1
+                ? Math.Round(confidence.Value * 100, 2)
+                : Math.Round(confidence.Value, 2);
+        }
+
+        private static string GetTimelineRiskLevel(decimal? confidence)
+        {
+            if (!confidence.HasValue)
+                return "Not Predicted";
+
+            var percentage = ToPercentage(confidence) ?? 0;
+
+            if (percentage >= 75)
+                return "High Risk";
+
+            if (percentage >= 50)
+                return "Moderate Risk";
+
+            return "Low Risk";
         }
     }
 }

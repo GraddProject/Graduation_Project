@@ -194,15 +194,25 @@ namespace Presentation.Controllers
         }
 
         [HttpGet("GetPatientMedicalHistories")]
-        public async Task<ActionResult<IEnumerable<MedicalHistoryDetailsDto>>> GetPatientMedicalHistories(int patientId)
+        public async Task<ActionResult<IEnumerable<PatientMedicalHistoryMonthGroupDto>>> GetPatientMedicalHistoriesTimeline(int patientId, [FromQuery] PatientMedicalHistoryQueryParams queryParams)
         {
             var email = User.FindFirstValue(ClaimTypes.Email);
 
-
-            var result = await _serviceManger.DoctorService.GetPatientMedicalHistoriesAsync(email!, patientId);
+            var result = await _serviceManger.DoctorService.GetPatientMedicalHistoriesTimelineAsync(email!, patientId, queryParams);
 
             return Ok(result);
         }
+
+
+        //public async Task<ActionResult<IEnumerable<MedicalHistoryDetailsDto>>> GetPatientMedicalHistories(int patientId)
+        //{
+        //    var email = User.FindFirstValue(ClaimTypes.Email);
+
+
+        //    var result = await _serviceManger.DoctorService.GetPatientMedicalHistoriesAsync(email!, patientId);
+
+        //    return Ok(result);
+        //}
 
         [HttpGet("GetMedicalHistoryById")]
         public async Task<ActionResult<MedicalHistoryDetailsDto>> GetPatientMedicalHistoryById(int patientId, int medicalHistoryId)

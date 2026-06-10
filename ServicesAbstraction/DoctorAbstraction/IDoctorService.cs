@@ -86,5 +86,8 @@ namespace ServicesAbstraction.DoctorAbstraction
         Task<OnlineSessionStartDto> GetDoctorOnlineSessionStartLinkAsync(string email, int appointmentId);
 
         Task<DoctorDashboardCardsDto> GetDoctorDashboardCardsAsync(string email);
+
+
+        Task<IEnumerable<PatientMedicalHistoryMonthGroupDto>> GetPatientMedicalHistoriesTimelineAsync(string email, int patientId, PatientMedicalHistoryQueryParams queryParams);
     }
 }

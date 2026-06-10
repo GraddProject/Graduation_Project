@@ -45,8 +45,7 @@ namespace Presentation.Controllers
 
 
         [HttpGet("GetMyMedicalHistories")]
-        public async Task<ActionResult<IEnumerable<PatientMedicalHistoryMonthGroupDto>>> GetMyMedicalHistories(
-    [FromQuery] PatientMedicalHistoryQueryParams queryParams)
+        public async Task<ActionResult<IEnumerable<PatientMedicalHistoryMonthGroupDto>>> GetMyMedicalHistories([FromQuery] PatientMedicalHistoryQueryParams queryParams)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
@@ -61,15 +60,30 @@ namespace Presentation.Controllers
 
 
 
-        [HttpPut("CompleteMedicalProfile")]
-        public async Task<ActionResult<bool>> CompleteProfile(CompleteMedicalProfileDto completeMedicalProfileDto)
+        [HttpGet("Prescriptions")]
+        public async Task<ActionResult<IEnumerable<PatientPrescriptionDto>>> GetMyPrescriptions()
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userId))
-                return Unauthorized();
-            var result = await _serviceManger.PatientService.CompleteProfileAsync(userId, completeMedicalProfileDto);
+
+            var result = await _serviceManger.PatientService.GetMyPrescriptionsAsync(userId!);
+
             return Ok(result);
         }
+
+
+        [HttpGet("last-visit-summary")]
+        public async Task<ActionResult<PatientLastVisitSummaryDto>> GetLastVisitSummary()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            var result = await _serviceManger.PatientService.GetLastVisitSummaryAsync(userId!);
+
+            if (result is null)
+                return NotFound("No last visit summary found.");
+
+            return Ok(result);
+        }
+
 
 
         [HttpGet("GetAllAvailbleSlots")]
@@ -104,6 +118,16 @@ namespace Presentation.Controllers
             return Ok(result);
         }
 
+
+        [HttpPut("CompleteMedicalProfile")]
+        public async Task<ActionResult<bool>> CompleteProfile(CompleteMedicalProfileDto completeMedicalProfileDto)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+            var result = await _serviceManger.PatientService.CompleteProfileAsync(userId, completeMedicalProfileDto);
+            return Ok(result);
+        }
 
         [HttpDelete("CancelAppointment")]
         public async Task<ActionResult<ServiceResponse>> CancelAppointment(int appointmentId)
