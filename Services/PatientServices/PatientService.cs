@@ -869,7 +869,7 @@ namespace Services.PatientServices
             if (patient is null)
                 throw new PatientNotFoundException(userId);
 
-            await CompleteExpiredConfirmedAppointmentsForPatientAsync(patient.Id);
+            //await CompleteExpiredConfirmedAppointmentsForPatientAsync(patient.Id);
 
             var appointments = await appointmentRepo.GetAllAsync(
                 new PatientLastCompletedAppointmentSpecification(patient.Id));
