@@ -7,22 +7,18 @@ using System.Threading.Tasks;
 
 namespace Services.Specifications.MedicalHistorySpecification
 {
-    class PatientLastVisitMedicalHistorySpecification : BaseSpecifications<MedicalHistory>
+    class PatientMedicalHistoryByVisitDateSpecification : BaseSpecifications<MedicalHistory>
     {
-        public PatientLastVisitMedicalHistorySpecification(
+        public PatientMedicalHistoryByVisitDateSpecification(
             int patientId,
             int doctorId,
-            DateTime dayStart,
-            DateTime dayEnd)
+            DateTime visitDate)
             : base(h =>
                 h.PatientId == patientId &&
                 h.CreatedByDoctorId == doctorId &&
-                h.CreatedAt >= dayStart &&
-                h.CreatedAt < dayEnd)
+                h.CreatedAt >= visitDate.Date &&
+                h.CreatedAt < visitDate.Date.AddDays(1))
         {
-            AddInclude(h => h.CreatedByDoctor);
-            AddInclude(h => h.CreatedByDoctor.User);
-
             AddOrderByDescending(h => h.CreatedAt);
         }
     }

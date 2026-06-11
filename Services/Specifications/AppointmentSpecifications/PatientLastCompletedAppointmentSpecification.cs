@@ -15,8 +15,6 @@ namespace Services.Specifications.AppointmentSpecifications
                 a.Status == AppointmentStatus.Completed)
         {
             AddInclude(a => a.AvailabilitySlot);
-            AddInclude(a => a.Doctor);
-            AddInclude(a => a.Doctor.User);
 
             AddOrderByDescending(a => a.AvailabilitySlot.StartAt);
         }

@@ -854,59 +854,58 @@ namespace Services.PatientServices
 
 
 
-
-        public async Task<PatientLastVisitSummaryDto?> GetLastVisitSummaryAsync(string userId)
+        public async Task<PatientLastVisitSummaryDto?> GetMyLastVisitSummaryAsync(string email)
         {
-            if (string.IsNullOrWhiteSpace(userId))
+            if (string.IsNullOrWhiteSpace(email))
                 throw new UnauthorizedException();
 
             var patientRepo = _unitOfWork.GetRepository<Patient>();
             var appointmentRepo = _unitOfWork.GetRepository<Appointment>();
             var medicalHistoryRepo = _unitOfWork.GetRepository<MedicalHistory>();
 
-            var patient = await patientRepo.GetByIdAsync(new PatientByIdSpecification(userId));
+            var patient = await patientRepo.GetByIdAsync(
+                new PatientByEmailForAppointmentSpecification(email));
 
             if (patient is null)
-                throw new PatientNotFoundException(userId);
+                throw new PatientNotFoundException(email);
 
-            //await CompleteExpiredConfirmedAppointmentsForPatientAsync(patient.Id);
+            await CompleteExpiredConfirmedAppointmentsForPatientAsync(patient.Id);
 
             var appointments = await appointmentRepo.GetAllAsync(
                 new PatientLastCompletedAppointmentSpecification(patient.Id));
 
-            var lastAppointment = appointments.FirstOrDefault();
+            var lastVisit = appointments.FirstOrDefault();
 
-            if (lastAppointment is null)
-                return null;
+            if (lastVisit is null || lastVisit.AvailabilitySlot is null)
+                throw new BadRequestException("No completed appointment found for this patient.");
 
-            var visitDayStart = lastAppointment.AvailabilitySlot.StartAt.Date;
-            var visitDayEnd = visitDayStart.AddDays(1);
+            var visitDate = lastVisit.AvailabilitySlot.StartAt;
 
             var histories = await medicalHistoryRepo.GetAllAsync(
-                new PatientLastVisitMedicalHistorySpecification(
+                new PatientMedicalHistoryByVisitDateSpecification(
                     patient.Id,
-                    lastAppointment.DoctorId,
-                    visitDayStart,
-                    visitDayEnd));
+                    lastVisit.DoctorId,
+                    visitDate));
 
-            var lastHistory = histories.FirstOrDefault();
+            var medicalHistory = histories.FirstOrDefault();
 
-            if (lastHistory is null)
-                return null;
+            if (medicalHistory is null)
+                throw new BadRequestException($"No medical history found on visit date: {visitDate.Date:yyyy-MM-dd}");
 
             return new PatientLastVisitSummaryDto
             {
-                MedicalHistoryId = lastHistory.Id,
+                MedicalHistoryId = medicalHistory.Id,
 
-                Date = lastAppointment.AvailabilitySlot.StartAt.ToString(
+                Date = medicalHistory.CreatedAt.ToString(
                     "MMM dd, yyyy",
                     CultureInfo.InvariantCulture),
 
-                Diagnosis = lastHistory.Diagnosis,
-                VitalSigns = lastHistory.VitalSigns,
-                Notes = lastHistory.Notes,
+                Diagnosis = medicalHistory.Diagnosis,
+                VitalSigns = medicalHistory.VitalSigns,
+                Notes = medicalHistory.Notes
             };
         }
+
 
 
 

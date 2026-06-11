@@ -53,6 +53,6 @@ namespace ServicesAbstraction.PatientAbstraction
 
         Task<IEnumerable<PatientPrescriptionDto>> GetMyPrescriptionsAsync(string userId);
 
-        Task<PatientLastVisitSummaryDto?> GetLastVisitSummaryAsync(string userId);
+        Task<PatientLastVisitSummaryDto?> GetMyLastVisitSummaryAsync(string email);
     }
 }

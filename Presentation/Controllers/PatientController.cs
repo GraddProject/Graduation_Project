@@ -72,28 +72,13 @@ namespace Presentation.Controllers
 
 
         [HttpGet("last-visit-summary")]
-        public async Task<IActionResult> GetLastVisitSummary()
+        public async Task<ActionResult<PatientLastVisitSummaryDto?>> GetLastVisitSummary()
         {
-            try
-            {
-                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var email = User.FindFirstValue(ClaimTypes.Email);
 
-                var result = await _serviceManger.PatientService.GetLastVisitSummaryAsync(userId!);
+            var result = await _serviceManger.PatientService.GetMyLastVisitSummaryAsync(email!);
 
-                if (result is null)
-                    return NotFound("No last visit summary found.");
-
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new
-                {
-                    message = ex.Message,
-                    innerMessage = ex.InnerException?.Message,
-                    stackTrace = ex.StackTrace
-                });
-            }
+            return Ok(result);
         }
 
         //[HttpGet("last-visit-summary")]
