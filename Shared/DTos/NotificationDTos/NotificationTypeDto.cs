@@ -14,6 +14,20 @@ namespace Shared.DTos.NotificationDTos
         AppointmentRescheduleAccepted = 3,
         AppointmentRescheduleRejected = 4,
         AppointmentCanceled = 5,
-        AppointmentBooked = 6
+        AppointmentBooked = 6,
+
+        OnlineSessionReady = 7,
+        AppointmentReminder = 8,
+
+        MedicalTestUploaded = 9,
+
+        MedicalHistoryCreated = 10,
+        MedicalHistoryUpdated = 11,
+
+        PrescriptionAdded = 12,
+        PrescriptionUpdated = 13,
+        PrescriptionDeleted = 14,
+
+        PredictionCreated = 15
     }
 }

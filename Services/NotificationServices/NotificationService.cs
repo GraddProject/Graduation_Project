@@ -17,7 +17,7 @@ namespace Services.NotificationServices
         IUnitOfWork _unitOfWork,
         INotificationSender _notificationSender) : INotificationService
     {
-        public async Task<NotificationDto> CreateAndSendAsync(string userId,string title,string message,NotificationTypeDto type,int? appointmentId = null)
+        public async Task<NotificationDto> CreateAndSendAsync(string userId, string title, string message, NotificationTypeDto type, int? appointmentId = null, string? relatedEntityType = null, int? relatedEntityId = null)
         {
             if (string.IsNullOrWhiteSpace(userId))
                 throw new BadRequestException("Notification user id is required.");
@@ -29,6 +29,8 @@ namespace Services.NotificationServices
                 Message = message,
                 Type = (NotificationType)type,
                 AppointmentId = appointmentId,
+                RelatedEntityType = relatedEntityType,
+                RelatedEntityId = relatedEntityId,
                 IsRead = false,
                 CreatedAt = DateTime.Now
             };
@@ -133,6 +135,8 @@ namespace Services.NotificationServices
                 Type = notification.Type.ToString(),
                 IsRead = notification.IsRead,
                 AppointmentId = notification.AppointmentId,
+                RelatedEntityType = notification.RelatedEntityType,
+                RelatedEntityId = notification.RelatedEntityId,
                 CreatedAt = notification.CreatedAt
             };
         }

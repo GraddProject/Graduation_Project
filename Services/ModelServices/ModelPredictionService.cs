@@ -6,7 +6,9 @@ using Services.Specifications.PatientSpecifications;
 using Services.Specifications.PredictionSpecifications;
 using ServicesAbstraction.Common;
 using ServicesAbstraction.ModelAbstraction;
+using ServicesAbstraction.NotificationAbstraction;
 using Shared.DTos.MlDTos;
+using Shared.DTos.NotificationDTos;
 using Shared.DTos.PredictionDTos;
 using System.Globalization;
 using System.Net.Http.Json;
@@ -20,13 +22,15 @@ namespace Services.ModelServices
         private readonly IConfiguration _configuration;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IFileStorageService _fileStorageService;
+        private readonly INotificationService _notificationService;
 
-        public ModelPredictionService(HttpClient httpClient, IConfiguration configuration, IUnitOfWork unitOfWork, IFileStorageService fileStorageService)
+        public ModelPredictionService(HttpClient httpClient, IConfiguration configuration, IUnitOfWork unitOfWork, IFileStorageService fileStorageService, INotificationService notificationService)
         {
             _httpClient = httpClient;
             _configuration = configuration;
             _unitOfWork = unitOfWork;
             _fileStorageService = fileStorageService;
+            _notificationService = notificationService;
         }
         public async Task<PredictionResponseDto> PredictAsync(PredictionRequestDto request)
         {
@@ -123,7 +127,18 @@ namespace Services.ModelServices
 
             if (saved <= 0)
                 throw new BadRequestException("Failed to save prediction result.");
-
+           
+            
+            await _notificationService.CreateAndSendAsync(
+                patient.UserId,
+                "New Prediction Result",
+                "Your doctor added a new health prediction result to your profile.",
+                NotificationTypeDto.PredictionCreated,
+                appointmentId: null,
+                relatedEntityType: "PredictionRecord",
+                relatedEntityId: predictionRecord.Id);
+            
+            
             return new SavedPredictionResponseDto
             {
                 PredictionRecordId = predictionRecord.Id,

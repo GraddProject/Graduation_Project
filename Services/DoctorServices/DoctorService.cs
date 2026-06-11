@@ -1303,9 +1303,27 @@ namespace Services.DoctorServices
 
             await MRepo.AddAsync(medicalHistory);
 
-            return await _unitOfWork.SaveChangesAsync() > 0
-                ? _mapper.Map<MedicalHistoryDetailsDto>(medicalHistory)
-                : throw new BadRequestException("Failed to add medical history.");
+            var saved = await _unitOfWork.SaveChangesAsync();
+
+            if (saved <= 0)
+                throw new BadRequestException("Failed to add medical history.");
+
+            await _notificationService.CreateAndSendAsync(
+                patient.UserId,
+                "New Medical Record Added",
+                "Your doctor added a new medical record to your profile.",
+                NotificationTypeDto.MedicalHistoryCreated,
+                appointmentId: null,
+                relatedEntityType: "MedicalHistory",
+                relatedEntityId: medicalHistory.Id);
+
+            return _mapper.Map<MedicalHistoryDetailsDto>(medicalHistory);
+
+
+            //await MRepo.AddAsync(medicalHistory);
+            //return await _unitOfWork.SaveChangesAsync() > 0
+            //    ? _mapper.Map<MedicalHistoryDetailsDto>(medicalHistory)
+            //    : throw new BadRequestException("Failed to add medical history.");
         }
 
         public async Task<MedicalHistoryDetailsDto> AddPreScriptionsAsync(string Email, int PatientId, int MedicalHistoryId, AddPreScriptionsDto dto)
@@ -1371,6 +1389,18 @@ namespace Services.DoctorServices
             if (saved <= 0)
                 throw new BadRequestException("Failed to add prescriptions.");
 
+            await _notificationService.CreateAndSendAsync(
+                patient.UserId,
+                "New Prescription Added",
+                dto.PreScriptions.Count == 1
+                    ? "Your doctor added a new medication to your treatment plan."
+                    : $"Your doctor added {dto.PreScriptions.Count} new medications to your treatment plan.",
+                NotificationTypeDto.PrescriptionAdded,
+                appointmentId: null,
+                relatedEntityType: "MedicalHistory",
+                relatedEntityId: medicalHistory.Id);
+
+
             var updatedMedicalHistory = await MRepo.GetByIdAsync(
                 new PatientMedicalHistoriesSpecification(PatientId, MedicalHistoryId));
 
@@ -1409,9 +1439,26 @@ namespace Services.DoctorServices
 
             MRepo.Update(medicalHistory);
 
-            return await _unitOfWork.SaveChangesAsync() > 0
-                ? _mapper.Map<MedicalHistoryDetailsDto>(medicalHistory)
-                : throw new BadRequestException("Failed to update medical history.");
+            var saved = await _unitOfWork.SaveChangesAsync();
+
+            if (saved <= 0)
+                throw new BadRequestException("Failed to update medical history.");
+
+            await _notificationService.CreateAndSendAsync(
+                patient.UserId,
+                "Medical Record Updated",
+                "Your doctor updated one of your medical records.",
+                NotificationTypeDto.MedicalHistoryUpdated,
+                appointmentId: null,
+                relatedEntityType: "MedicalHistory",
+                relatedEntityId: medicalHistory.Id);
+
+            return _mapper.Map<MedicalHistoryDetailsDto>(medicalHistory);
+
+
+            //return await _unitOfWork.SaveChangesAsync() > 0
+            //  ? _mapper.Map<MedicalHistoryDetailsDto>(medicalHistory)
+            //  : throw new BadRequestException("Failed to update medical history.");
 
         }
 
@@ -1443,9 +1490,26 @@ namespace Services.DoctorServices
 
             PRRepo.Update(prescription);
 
-            return await _unitOfWork.SaveChangesAsync() > 0
-                ? _mapper.Map<MedicalHistoryDetailsDto>(prescription.MedicalHistory)
-                : throw new BadRequestException("Failed to update prescription.");
+            var saved = await _unitOfWork.SaveChangesAsync();
+
+            if (saved <= 0)
+                throw new BadRequestException("Failed to update prescription.");
+
+            await _notificationService.CreateAndSendAsync(
+                patient.UserId,
+                "Prescription Updated",
+                $"Your doctor updated your prescription: {prescription.MedicationName}.",
+                NotificationTypeDto.PrescriptionUpdated,
+                appointmentId: null,
+                relatedEntityType: "Prescription",
+                relatedEntityId: prescription.Id);
+
+            return _mapper.Map<MedicalHistoryDetailsDto>(prescription.MedicalHistory);
+
+
+            //return await _unitOfWork.SaveChangesAsync() > 0
+            //    ? _mapper.Map<MedicalHistoryDetailsDto>(prescription.MedicalHistory)
+            //    : throw new BadRequestException("Failed to update prescription.");
         }
 
         public async Task<ServiceResponse> DeleteMedicalHistoryAsync(string Email, int PatientId, int MedicalHistoryId)
@@ -1496,9 +1560,40 @@ namespace Services.DoctorServices
             if (prescription is null)
                 throw new PrescriptionNotFoundException(PrescriptionId);
 
+            var medicationName = prescription.MedicationName;
+
             PRRepo.Remove(prescription);
-            return await _unitOfWork.SaveChangesAsync() > 0 ? new ServiceResponse { Status = true, Message = "Prescription deleted successfully." }
-                                                            : new ServiceResponse { Status = false, Message = "Prescription was not deleted." };
+
+            var saved = await _unitOfWork.SaveChangesAsync();
+
+            if (saved <= 0)
+            {
+                return new ServiceResponse
+                {
+                    Status = false,
+                    Message = "Prescription was not deleted."
+                };
+            }
+
+            await _notificationService.CreateAndSendAsync(
+                patient.UserId,
+                "Prescription Deleted",
+                $"Your doctor removed your prescription: {medicationName}.",
+                NotificationTypeDto.PrescriptionDeleted,
+                appointmentId: null,
+                relatedEntityType: "MedicalHistory",
+                relatedEntityId: MedicalHistoryId);
+
+            return new ServiceResponse
+            {
+                Status = true,
+                Message = "Prescription deleted successfully."
+            };
+
+
+            //PRRepo.Remove(prescription);
+            //return await _unitOfWork.SaveChangesAsync() > 0 ? new ServiceResponse { Status = true, Message = "Prescription deleted successfully." }
+            //                                                : new ServiceResponse { Status = false, Message = "Prescription was not deleted." };
 
         }
         public async Task<IEnumerable<MedicalHistoryDetailsDto>> GetPatientMedicalHistoriesAsync(string Email, int PatientId)

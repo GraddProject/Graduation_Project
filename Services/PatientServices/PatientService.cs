@@ -281,7 +281,7 @@ namespace Services.PatientServices
                     patient.UserId,
                     "Online Session Ready",
                     $"Your Zoom session is ready for {slot.StartAt:dd/MM/yyyy hh:mm tt}.",
-                    NotificationTypeDto.AppointmentConfirmed,
+                    NotificationTypeDto.OnlineSessionReady,
                     appointment.Id);
             }
             return new ServiceResponse
@@ -498,9 +498,34 @@ namespace Services.PatientServices
 
                 await medicalTestRepo.AddAsync(medicalTest);
 
-                return await _unitOfWork.SaveChangesAsync() > 0
-                    ? _mapper.Map<MedicalTestDto>(medicalTest)
-                    : throw new BadRequestException("Failed to save medical test.");
+                var saved = await _unitOfWork.SaveChangesAsync();
+
+                if (saved <= 0)
+                    throw new BadRequestException("Failed to save medical test.");
+
+                var doctorRepo = _unitOfWork.GetRepository<Doctor>();
+                var doctor = await doctorRepo.GetByIdAsync(patient.DoctorID);
+
+                if (doctor is not null)
+                {
+                    await _notificationService.CreateAndSendAsync(
+                        doctor.UserId,
+                        "New Medical Test Uploaded",
+                        $"{patient.User.DisplayName} uploaded a new medical test.",
+                        NotificationTypeDto.MedicalTestUploaded,
+                        appointmentId: null,
+                        relatedEntityType: "MedicalTest",
+                        relatedEntityId: medicalTest.Id);
+                }
+
+                return _mapper.Map<MedicalTestDto>(medicalTest);
+
+
+                //await medicalTestRepo.AddAsync(medicalTest);
+
+                //return await _unitOfWork.SaveChangesAsync() > 0
+                //    ? _mapper.Map<MedicalTestDto>(medicalTest)
+                //    : throw new BadRequestException("Failed to save medical test.");
             }
             catch
             {

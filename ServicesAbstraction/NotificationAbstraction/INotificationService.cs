@@ -15,7 +15,9 @@ namespace ServicesAbstraction.NotificationAbstraction
             string title,
             string message,
             NotificationTypeDto type,
-            int? appointmentId = null);
+            int? appointmentId = null,
+            string? relatedEntityType = null,
+            int? relatedEntityId = null);
 
         Task<IEnumerable<NotificationDto>> GetUserNotificationsAsync(string userId);
 
