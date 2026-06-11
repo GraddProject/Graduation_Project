@@ -21,8 +21,8 @@ namespace DomainLayer.Models
 
         public bool IsRead { get; set; } = false;
 
-        public int? AppointmentId { get; set; }
-        public Appointment? Appointment { get; set; }
+        //public int? AppointmentId { get; set; }
+        //public Appointment? Appointment { get; set; }
 
 
         public string? RelatedEntityType { get; set; }

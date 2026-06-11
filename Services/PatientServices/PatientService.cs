@@ -273,7 +273,8 @@ namespace Services.PatientServices
                   "New Appointment Booked",
                   $"{patient.User.DisplayName} booked appointment at {slot.StartAt:dd/MM/yyyy hh:mm tt}.",
                   NotificationTypeDto.AppointmentBooked,
-                  appointment.Id);
+                  relatedEntityType: "Appointment",
+                  relatedEntityId: appointment.Id);
 
             if (slot.Type == DomainLayer.Models.AppointmentType.Online)
             {
@@ -282,7 +283,8 @@ namespace Services.PatientServices
                     "Online Session Ready",
                     $"Your Zoom session is ready for {slot.StartAt:dd/MM/yyyy hh:mm tt}.",
                     NotificationTypeDto.OnlineSessionReady,
-                    appointment.Id);
+                    relatedEntityType: "Appointment",
+                    relatedEntityId: appointment.Id);
             }
             return new ServiceResponse
             {
@@ -346,8 +348,8 @@ namespace Services.PatientServices
                 doctorUserId,
                 "Appointment Canceled By Patient",
                 $"{patientName} canceled appointment at {appointmentTime:dd/MM/yyyy hh:mm tt}.",
-                NotificationTypeDto.AppointmentCanceled,
-                null);
+                NotificationTypeDto.AppointmentCanceled
+                );
 
             return new ServiceResponse
             {
@@ -397,7 +399,8 @@ namespace Services.PatientServices
                 "Reschedule Accepted",
                 $"{patient.User.DisplayName} accepted the new appointment time: {appointment.AvailabilitySlot.StartAt:dd/MM/yyyy hh:mm tt}.",
                 NotificationTypeDto.AppointmentRescheduleAccepted,
-                appointment.Id);
+                relatedEntityType: "Appointment",
+                relatedEntityId: appointment.Id);
 
             return new ServiceResponse
             {
@@ -513,7 +516,6 @@ namespace Services.PatientServices
                         "New Medical Test Uploaded",
                         $"{patient.User.DisplayName} uploaded a new medical test.",
                         NotificationTypeDto.MedicalTestUploaded,
-                        appointmentId: null,
                         relatedEntityType: "MedicalTest",
                         relatedEntityId: medicalTest.Id);
                 }

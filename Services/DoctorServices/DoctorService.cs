@@ -694,7 +694,8 @@ namespace Services.DoctorServices
                 "Appointment Canceled",
                 $"Your appointment at {appointment.AvailabilitySlot.StartAt:dd/MM/yyyy hh:mm tt} has been canceled.",
                 NotificationTypeDto.AppointmentCanceled,
-                appointment.Id);
+                relatedEntityType: "Appointment",
+                relatedEntityId: appointment.Id);
 
             return new ServiceResponse
             {
@@ -810,7 +811,8 @@ namespace Services.DoctorServices
                 "Appointment Reschedule Request",
                 $"Doctor requested to change your appointment from {oldStartAt:dd/MM/yyyy hh:mm tt} to {currentSlot.StartAt:dd/MM/yyyy hh:mm tt}.",
                 NotificationTypeDto.AppointmentRescheduled,
-                appointment.Id);
+                relatedEntityType: "Appointment",
+                relatedEntityId: appointment.Id);
 
             return new ServiceResponse
             {
@@ -1313,7 +1315,6 @@ namespace Services.DoctorServices
                 "New Medical Record Added",
                 "Your doctor added a new medical record to your profile.",
                 NotificationTypeDto.MedicalHistoryCreated,
-                appointmentId: null,
                 relatedEntityType: "MedicalHistory",
                 relatedEntityId: medicalHistory.Id);
 
@@ -1396,7 +1397,6 @@ namespace Services.DoctorServices
                     ? "Your doctor added a new medication to your treatment plan."
                     : $"Your doctor added {dto.PreScriptions.Count} new medications to your treatment plan.",
                 NotificationTypeDto.PrescriptionAdded,
-                appointmentId: null,
                 relatedEntityType: "MedicalHistory",
                 relatedEntityId: medicalHistory.Id);
 
@@ -1449,7 +1449,6 @@ namespace Services.DoctorServices
                 "Medical Record Updated",
                 "Your doctor updated one of your medical records.",
                 NotificationTypeDto.MedicalHistoryUpdated,
-                appointmentId: null,
                 relatedEntityType: "MedicalHistory",
                 relatedEntityId: medicalHistory.Id);
 
@@ -1500,7 +1499,6 @@ namespace Services.DoctorServices
                 "Prescription Updated",
                 $"Your doctor updated your prescription: {prescription.MedicationName}.",
                 NotificationTypeDto.PrescriptionUpdated,
-                appointmentId: null,
                 relatedEntityType: "Prescription",
                 relatedEntityId: prescription.Id);
 
@@ -1580,7 +1578,6 @@ namespace Services.DoctorServices
                 "Prescription Deleted",
                 $"Your doctor removed your prescription: {medicationName}.",
                 NotificationTypeDto.PrescriptionDeleted,
-                appointmentId: null,
                 relatedEntityType: "MedicalHistory",
                 relatedEntityId: MedicalHistoryId);
 

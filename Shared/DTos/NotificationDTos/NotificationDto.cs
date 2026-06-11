@@ -17,7 +17,7 @@ namespace Shared.DTos.NotificationDTos
 
         public bool IsRead { get; set; }
 
-        public int? AppointmentId { get; set; }
+        //public int? AppointmentId { get; set; }
 
         public string? RelatedEntityType { get; set; }
         public int? RelatedEntityId { get; set; }

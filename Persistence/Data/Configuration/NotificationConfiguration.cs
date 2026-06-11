@@ -18,10 +18,10 @@ namespace Persistence.Data.Configuration
                 .HasForeignKey(n => n.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            builder.HasOne(n => n.Appointment)
-                .WithMany()
-                .HasForeignKey(n => n.AppointmentId)
-                .OnDelete(DeleteBehavior.SetNull);
+            //builder.HasOne(n => n.Appointment)
+            //    .WithMany()
+            //    .HasForeignKey(n => n.AppointmentId)
+            //    .OnDelete(DeleteBehavior.SetNull);
 
 
             builder.Property(n => n.Title)

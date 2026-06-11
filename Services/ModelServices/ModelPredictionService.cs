@@ -134,7 +134,6 @@ namespace Services.ModelServices
                 "New Prediction Result",
                 "Your doctor added a new health prediction result to your profile.",
                 NotificationTypeDto.PredictionCreated,
-                appointmentId: null,
                 relatedEntityType: "PredictionRecord",
                 relatedEntityId: predictionRecord.Id);
             
