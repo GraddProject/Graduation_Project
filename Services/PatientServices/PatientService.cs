@@ -62,6 +62,8 @@ namespace Services.PatientServices
 
             ValidateProfileImage(profileDto.ProfileImage);
 
+            ValidateMedicalProfileData(profileDto);
+
             var oldProfileImagePath = patient.User.ProfileImagePath;
             string? uploadedObjectName = null;
 
@@ -116,6 +118,50 @@ namespace Services.PatientServices
                 throw;
             }
         }
+
+
+        private static void ValidateMedicalProfileData(CompleteMedicalProfileDto profileDto)
+        {
+            var errors = new List<string>();
+
+            if (profileDto.Height.HasValue && profileDto.Height <= 0)
+                errors.Add("Height must be greater than 0.");
+
+            if (profileDto.Weight.HasValue && profileDto.Weight <= 0)
+                errors.Add("Weight must be greater than 0.");
+
+            if (profileDto.NumberOfPregnancies.HasValue && profileDto.NumberOfPregnancies < 0)
+                errors.Add("Number of pregnancies cannot be negative.");
+
+            if (profileDto.Gravida.HasValue && profileDto.Gravida < 0)
+                errors.Add("Gravida cannot be negative.");
+
+            if (profileDto.Parity.HasValue && profileDto.Parity < 0)
+                errors.Add("Parity cannot be negative.");
+
+            if (profileDto.Gravida.HasValue &&
+                profileDto.Parity.HasValue &&
+                profileDto.Parity > profileDto.Gravida)
+            {
+                errors.Add("Parity cannot be greater than Gravida.");
+            }
+
+            if (profileDto.DateOfBirth.HasValue &&
+                profileDto.DateOfBirth.Value > DateOnly.FromDateTime(DateTime.Today))
+            {
+                errors.Add("Date of birth cannot be in the future.");
+            }
+
+            if (profileDto.PregnancyStartDate.HasValue &&
+                profileDto.PregnancyStartDate.Value > DateOnly.FromDateTime(DateTime.Today))
+            {
+                errors.Add("Pregnancy start date cannot be in the future.");
+            }
+
+            if (errors.Any())
+                throw new BadRequestException(errors);
+        }
+
 
 
 
