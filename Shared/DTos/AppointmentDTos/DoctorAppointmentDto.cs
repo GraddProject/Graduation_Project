@@ -14,7 +14,7 @@ namespace Shared.DTos.AppointmentDTos
         public string DateLabel { get; set; }
         public string Time { get; set; }
         public string Duration { get; set; }
-
+        public int PatientId { get; set; }
         public string PatientName { get; set; }
         public string? ProfileImageUrl { get; set; }
 

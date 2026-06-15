@@ -620,7 +620,7 @@ namespace Services.DoctorServices
                 DateLabel = a.AvailabilitySlot.StartAt.ToString("MMM dd"),
                 Time = a.AvailabilitySlot.StartAt.ToString("hh:mm tt"),
                 Duration = $"{(int)a.AvailabilitySlot.Duration.TotalMinutes} mins",
-
+                PatientId = a.PatientId,
                 PatientName = a.Patient.User.DisplayName,
                 ProfileImageUrl = await _fileStorageService.GenerateReadUrlAsync(a.Patient.User.ProfileImagePath, TimeSpan.FromHours(12)),
 
