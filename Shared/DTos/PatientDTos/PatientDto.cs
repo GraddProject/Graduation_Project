@@ -9,6 +9,7 @@ namespace Shared.DTos.PatientDTos
     public class PatientDto
     {
         public int Id { get; set; }
+        public string? ProfileImageUrl { get; set; }
         public string DisplayName { get; set; } = default!;
         public string Email { get; set; }
         public string Role { get; set; } = "Patient";

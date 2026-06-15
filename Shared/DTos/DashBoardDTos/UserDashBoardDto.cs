@@ -9,6 +9,8 @@ namespace Shared.DTos.DashBoardDTos
     public class UserDashBoardDto
     {
         public int Id { get; set; }
+        public string? ProfileImageUrl { get; set; }
+
         public string DisplayName { get; set; } = default!;
         public string Email { get; set; } = default!;
         public string Role { get; set; } = default!;

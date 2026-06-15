@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using Services.Specifications;
 using Services.Specifications.PatientSpecifications;
 using Services.Specifications.PatientSpecifications;
+using ServicesAbstraction.Common;
 using ServicesAbstraction.IAdminAbstraction;
 using Shared.DTos.DashBoardDTos;
 using Shared.DTos.DoctorDTos;
@@ -28,7 +29,8 @@ using System.Threading.Tasks;
 namespace Services.AdminServices
 {
     public class AdminService(IUnitOfWork _unitOfWork, IMapper _mapper,
-                              UserManager<ApplicationUser> _userManager) : IAdminService
+                              UserManager<ApplicationUser> _userManager,
+                              IFileStorageService _fileStorageService) : IAdminService
     {
         public async Task<UserDto> RegisterDoctorAsync(RegisterDoctorDto registerDoctorDto)
         {
@@ -134,6 +136,8 @@ namespace Services.AdminServices
 
             // NEW (Add Email,Role,Actived,regdate)
             var result = _mapper.Map<DoctorDto>(Doctor);
+            result.ProfileImageUrl = await _fileStorageService.GenerateReadUrlAsync(Doctor?.User.ProfileImagePath, TimeSpan.FromHours(12));
+
             return result;
         }
 
@@ -202,8 +206,10 @@ namespace Services.AdminServices
             var spec = new PatientDetailsSpecification(Id);
             var patient = await _unitOfWork.GetRepository<Patient>().GetByIdAsync(spec)
                   ?? throw new PatientNotFoundException(Id);
+            var result = _mapper.Map<PatientDto>(patient);
+            result.ProfileImageUrl = await _fileStorageService.GenerateReadUrlAsync(patient?.User.ProfileImagePath, TimeSpan.FromHours(12));
 
-            return _mapper.Map<PatientDto>(patient);
+            return result;
 
             // NEW (Add Email,Role,Actived,regdate)
 
@@ -376,14 +382,18 @@ namespace Services.AdminServices
             var DoctorsDto = _mapper.Map<IEnumerable<UserDashBoardDto>>(Doctors);
             //foreach (var Doctor in DoctorsDto)
             //    Doctor.Role = "Doctor";
-
+            foreach (var doctorDto in DoctorsDto)
+                doctorDto.ProfileImageUrl = await _fileStorageService.GenerateReadUrlAsync(
+                    Doctors.First(d => d.User.Email == doctorDto.Email).User.ProfileImagePath,
+                    TimeSpan.FromHours(12));
             var Pspec = new PatientDetailsSpecification();
             var Prepo = _unitOfWork.GetRepository<Patient>();
             var Patients = await Prepo.GetAllAsync(Pspec);
             var PatientsDto = _mapper.Map<IEnumerable<UserDashBoardDto>>(Patients);
-            //foreach (var Patient in PatientsDto)
-            //    Patient.Role = "Patient";
-
+            foreach (var patientDto in PatientsDto)
+                patientDto.ProfileImageUrl = await _fileStorageService.GenerateReadUrlAsync(
+                    Patients.First(p => p.User.Email == patientDto.Email).User.ProfileImagePath,
+                    TimeSpan.FromHours(12));
 
             var Data = DoctorsDto.Concat(PatientsDto);
 

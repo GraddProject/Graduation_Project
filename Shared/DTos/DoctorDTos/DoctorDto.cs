@@ -10,6 +10,7 @@ namespace Shared.DTos.DoctorDTos
     public class DoctorDto
     {
         public int Id { get; set; }
+        public string? ProfileImageUrl { get; set; }
         public string Email { get; set; }
         public string DisplayName { get; set; }
         public string Role { get; set; } = "Doctor";
