@@ -45,6 +45,12 @@ namespace Services.MappingProfiles
                  .ForAllMembers(opt => opt.Condition((src, dest, srcMember) =>
                      srcMember is not null &&
                      (srcMember is not string value || !string.IsNullOrWhiteSpace(value))));
+
+            CreateMap<Patient, PatientMedicalDataDto>()
+                .ForMember(dest => dest.PatientId, opt => opt.MapFrom(src => src.Id))
+                .IncludeMembers(src => src.MedicalInfo);
+
+            CreateMap<MedicalData, PatientMedicalDataDto>();
         }
     }
 }

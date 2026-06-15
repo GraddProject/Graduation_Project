@@ -10,6 +10,7 @@ using Shared.DTos.MedicalTestDTos;
 using Shared.DTos.MlDTos;
 using Shared.DTos.PaginationDTo;
 using Shared.DTos.PaginationDTo.DoctorDashBoardDTos;
+using Shared.DTos.PatientDTos;
 using Shared.DTos.PredictionDTos;
 using Shared.DTos.ZoomDTos;
 using Shared.ErrorModels;
@@ -62,6 +63,18 @@ namespace Presentation.Controllers
 
             return Ok(result);
         }
+
+        [HttpGet("patients/{patientId:int}/medical-data")]
+        public async Task<ActionResult<PatientMedicalDataDto>> GetPatientMedicalData(int patientId)
+        {
+            var email = User.FindFirstValue(ClaimTypes.Email);
+
+            var result = await _serviceManger.DoctorService.GetPatientMedicalDataAsync(email!, patientId);
+
+            return Ok(result);
+        }
+
+
 
 
         [HttpGet("risk-dashboard")]

@@ -5,6 +5,7 @@ using Shared.DTos.MedicalHistoryDTos;
 using Shared.DTos.MedicalTestDTos;
 using Shared.DTos.PaginationDTo;
 using Shared.DTos.PaginationDTo.DoctorDashBoardDTos;
+using Shared.DTos.PatientDTos;
 using Shared.DTos.ZoomDTos;
 using Shared.ErrorModels;
 using System;
@@ -19,7 +20,7 @@ namespace ServicesAbstraction.DoctorAbstraction
     public interface IDoctorService
     {
 
-
+        Task<PatientMedicalDataDto> GetPatientMedicalDataAsync(string email, int patientId);
         Task<ServiceResponse> CompleteProfileAsync(string email, CompleteDoctorProfileDto profileDto);
 
         Task<DoctorProfileDto> GetDoctorProfileAsync(string email);

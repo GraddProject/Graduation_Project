@@ -34,6 +34,34 @@ namespace Services.DoctorServices
                                 IZoomMeetingService _zoomMeetingService) : IDoctorService
     {
 
+        public async Task<PatientMedicalDataDto> GetPatientMedicalDataAsync(string email, int patientId)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+                throw new UnauthorizedException();
+
+            if (patientId <= 0)
+                throw new BadRequestException("Patient id is required.");
+
+            var doctorRepo = _unitOfWork.GetRepository<Doctor>();
+            var patientRepo = _unitOfWork.GetRepository<Patient>();
+
+            var doctor = await doctorRepo.GetByIdAsync(new DoctorDetailsSpecification(email));
+
+            if (doctor is null)
+                throw new DoctorNotFoundException("Doctor not found.");
+
+            var patient = await patientRepo.GetByIdAsync(
+                new PatientsBelongToSpecifcDoctor(patientId, doctor.Id));
+
+            if (patient is null)
+                throw PatientNotFoundException.Belong("Patient not found or does not belong to this doctor.");
+
+            patient.MedicalInfo ??= new MedicalData();
+
+            return _mapper.Map<PatientMedicalDataDto>(patient);
+        }
+
+
         public async Task<ServiceResponse> CompleteProfileAsync(string email, CompleteDoctorProfileDto profileDto)
         {
             if (string.IsNullOrWhiteSpace(email))
