@@ -64,6 +64,19 @@ namespace Presentation.Controllers
             return Ok(result);
         }
 
+
+        [HttpPost("preeclampsia")]
+        public async Task<ActionResult<SavedPredictionResponseDto>> CreatePreeclampsiaPrediction(CreatePreeclampsiaPredictionDto request)
+        {
+            var email = User.FindFirstValue(ClaimTypes.Email);
+
+            var result = await _serviceManger.ModelPredictionService.CreatePreeclampsiaPredictionAsync(email!, request);
+
+            return Ok(result);
+        }
+
+
+
         [HttpGet("patients/{patientId:int}/medical-data")]
         public async Task<ActionResult<PatientMedicalDataDto>> GetPatientMedicalData(int patientId)
         {

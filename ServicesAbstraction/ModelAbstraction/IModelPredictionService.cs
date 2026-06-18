@@ -14,6 +14,8 @@ namespace ServicesAbstraction.ModelAbstraction
 
         Task<SavedPredictionResponseDto> CreateGdmPredictionAsync(string email, CreateGdmPredictionDto request);
 
+        Task<SavedPredictionResponseDto> CreatePreeclampsiaPredictionAsync(string email, CreatePreeclampsiaPredictionDto request);
+
         Task<IEnumerable<PredictionInsightDto>> GetDoctorPredictionInsightsAsync(string email);
 
         Task<PredictionDetailsDto> GetPredictionDetailsAsync(string email, int predictionRecordId);
