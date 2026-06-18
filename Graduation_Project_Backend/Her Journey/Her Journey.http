@@ -1,0 +1,6 @@
+@Her_Journey_HostAddress = http://localhost:5027
+
+GET {{Her_Journey_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

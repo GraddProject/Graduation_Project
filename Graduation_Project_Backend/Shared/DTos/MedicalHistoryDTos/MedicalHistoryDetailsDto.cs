@@ -1,0 +1,22 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Shared.DTos.MedicalHistoryDTos
+{
+    public class MedicalHistoryDetailsDto
+    {
+        public int Id { get; set; }
+        public int PatientId { get; set; }
+        //public int CreatedByDoctorId { get; set; }
+        public int? PredictionRecordId { get; set; }
+        public string Diagnosis { get; set; }
+        public string VitalSigns { get; set; }
+        public string Notes { get; set; }
+        public DateTime CreatedAt { get; set; }
+
+        public ICollection<PreScriptionDto> PreScriptions { get; set; } = [];
+    }
+}
