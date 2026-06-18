@@ -55,7 +55,7 @@ export default function Dashboard() {
     const query = new URLSearchParams(params);
 
     const { data } = await axios.get(
-      `https://her-journey-669913381811.us-central1.run.app/api/Admin/DashBoard?${query.toString()}`,
+      `https://her-journey-1044023551709.us-central1.run.app/api/Admin/DashBoard?${query.toString()}`,
       {
         headers: {
           Authorization: `Bearer ${token}`,

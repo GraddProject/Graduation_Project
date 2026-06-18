@@ -11,8 +11,6 @@ import {
   CalendarDays,
   Clock,
   CheckCircle2,
-  AlertCircle,
-  Bell,
   Loader2,
 } from "lucide-react";
 import { UserContext } from "../../Components/context/User.context";
@@ -21,7 +19,6 @@ import WeekStrip from "../../Components/WeekStrip/WeekStrip";
 import AppointmentRow from "../../Components/AppointmentRow/AppointmentRow";
 
 const BASE = "https://her-journey-1044023551709.us-central1.run.app/";
-const STATUSES = ["Confirmed", "ReschedulePending", "Completed"];
 
 const avatar = (name) =>
   `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=d4e6d4&color=2d4a2d&size=64`;
@@ -63,6 +60,9 @@ function isAutoCompleted(appt) {
 }
 
 function normalise(raw) {
+
+  console.log("raw appointment keys:", Object.keys(raw), "patientId value:", raw.patientId);
+
   const date = (raw.date || "").substring(0, 10);
   const base = {
     ...raw,
@@ -81,7 +81,6 @@ const TAB_FILTER = {
   Upcoming: (s) => s === "Confirmed" || s === "ReschedulePending",
   Completed: (s) => s === "Completed",
 };
-
 const TABS = Object.keys(TAB_FILTER);
 
 export default function DoctorViewAppointments() {
@@ -97,38 +96,24 @@ export default function DoctorViewAppointments() {
   const [activeTab, setActiveTab] = useState("All");
   const [selectedDate, setSelectedDate] = useState(new Date());
 
- 
-const loadAppointments = useCallback(async () => {
-  if (!token) return;
-
-  setApptLoading(true);
-  setApptError("");
-
-  try {
-    const res = await fetch(`${BASE}/api/Doctor/GetAppointments`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    const text = await res.text(); 
-
-    if (!res.ok) {
-      console.error("Backend error response:", text);
-      throw new Error(text || "Failed to load appointments");
+  const loadAppointments = useCallback(async () => {
+    if (!token) return;
+    setApptLoading(true);
+    setApptError("");
+    try {
+      const res = await fetch(`${BASE}/api/Doctor/GetAppointments`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const text = await res.text();
+      if (!res.ok) throw new Error(text || "Failed to load appointments");
+      const data = JSON.parse(text);
+      setAppointments((Array.isArray(data) ? data : []).map(normalise));
+    } catch (e) {
+      setApptError(e.message || "Failed to load appointments.");
+    } finally {
+      setApptLoading(false);
     }
-
-    const data = JSON.parse(text);
-    const list = Array.isArray(data) ? data : [];
-
-    console.log("Raw appointments:", list);
-    setAppointments(list.map(normalise));
-
-  } catch (e) {
-    setApptError(e.message || "Failed to load appointments.");
-    console.error("Error fetching appointments:", e);
-  } finally {
-    setApptLoading(false);
-  }
-}, [token]);
+  }, [token]);
 
   const loadSummary = useCallback(async () => {
     if (!token) return;
@@ -138,8 +123,7 @@ const loadAppointments = useCallback(async () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error();
-      const data = await res.json();
-      setSummary(data);
+      setSummary(await res.json());
     } catch {
       setSummary(null);
     } finally {
@@ -173,14 +157,12 @@ const loadAppointments = useCallback(async () => {
   const totalAppointments = summary?.totalAppointments ?? 0;
   const upcoming = summary?.upcoming ?? 0;
   const completed = summary?.completed ?? 0;
-  const reschedulePending = summary?.reschedulePending ?? 0;
 
   return (
     <div className="flex-1 flex flex-col bg-primary-50/45 min-h-screen overflow-auto">
+      <div className="flex-1 px-4 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-5">
 
-      <div className="flex-1 px-8 py-6 space-y-5">
-        {/* Stats */}
-        <div className="flex gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
           <StatsCard
             icon={CalendarDays}
             value={summaryLoading ? "…" : totalAppointments}
@@ -206,34 +188,23 @@ const loadAppointments = useCallback(async () => {
             iconBg="bg-gray-100"
             iconColor="text-gray-500"
           />
-          <StatsCard
-            icon={AlertCircle}
-            value={summaryLoading ? "…" : reschedulePending}
-            label="Reschedule Pending"
-            text="Needs action"
-            iconBg="bg-red-50"
-            iconColor="text-red-500"
-            accent
-          />
         </div>
 
-        {/* Week strip */}
         <WeekStrip
           appointments={appointments}
           selectedDate={selectedDate}
           onSelectDate={setSelectedDate}
         />
 
-        {/* Appointments table */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
-          {/* Tabs + date label */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-50">
-            <div className="flex gap-1">
+ 
+          <div className="flex items-center justify-between px-3 sm:px-6 py-3 sm:py-4 border-b border-gray-50 gap-2">
+            <div className="flex gap-1 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
               {TABS.map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                  className={`px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all whitespace-nowrap ${
                     activeTab === tab
                       ? "bg-[#2d4a2d] text-white"
                       : "text-gray-500 hover:bg-gray-100"
@@ -243,21 +214,19 @@ const loadAppointments = useCallback(async () => {
                 </button>
               ))}
             </div>
-            <span className="text-sm text-gray-400">
-              {format(selectedDate, "EEEE, MMM d")}
+            <span className="text-xs sm:text-sm text-gray-400 shrink-0">
+              {format(selectedDate, "EEE, MMM d")}
             </span>
           </div>
 
-          {/* Body */}
-          <div className="px-4 py-2">
+          <div className="px-1 sm:px-2 py-1">
             {apptLoading ? (
               <div className="flex items-center justify-center gap-2 py-12 text-gray-400 text-sm">
-                <Loader2 size={16} className="animate-spin" /> Loading
-                appointments…
+                <Loader2 size={16} className="animate-spin" /> Loading appointments…
               </div>
             ) : apptError ? (
               <div className="flex flex-col items-center justify-center gap-2 py-12 text-red-400 text-sm">
-                <p>{apptError}</p>
+                <p className="text-center px-4">{apptError}</p>
                 <button
                   onClick={loadAppointments}
                   className="text-xs underline text-gray-500 hover:text-gray-700"

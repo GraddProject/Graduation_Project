@@ -1,5 +1,3 @@
-
-
 export default function StatisticsCard({ icon: Icon, title, value, iconColor, circleColor }) {
   return (
     <div className='bg-white w-3/12 py-4 px-3 rounded-xl shadow-[0px_0px_2px_#171a1f1F,_0px_2px_5px_#171a1f17] flex items-center gap-3'>

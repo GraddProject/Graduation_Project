@@ -83,8 +83,8 @@ export default function DoctorProfile() {
   return (
     <div className="flex-1 flex flex-col bg-[#f5f7f5] min-h-screen overflow-auto">
  
-      <div className="px-8 pb-8 pt-5 flex flex-col gap-5">
-        <ProfileCard />
+      <div className="px-4 sm:px-8 pb-8 pt-5 flex flex-col gap-5">
+       <ProfileCard token={token} />
 
         <SlotsList
           title="My Availability"
@@ -139,6 +139,9 @@ export default function DoctorProfile() {
           onClose={() => setRescheduleSlot(null)}
           onSaved={getSlots} />
       )}
+      
     </div>
+    
   );
+  
 }
