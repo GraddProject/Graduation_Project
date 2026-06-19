@@ -7,6 +7,8 @@ import { riskStyles, normalizeRisk } from "../../helpers/riskStyle";
 import MedicalProfileForm from "../../Components/MedicalProfileForm/MedicalProfileForm";
 import { calculateAge } from "../../helpers/calculateAge";
 import Loading from "../../Components/Loading/Loading";
+import axios from "axios";
+
 
 export default function PatientProfile() {
   const { user } = useContext(UserContext);
@@ -55,9 +57,7 @@ export default function PatientProfile() {
     return (
             <div className="flex items-center justify-center py-8 gap-2 text-red-400 text-xs">
               <AlertCircle size={14} /> {error}
-              <button onClick={onRetry} className="underline ml-1">
-                Retry
-              </button>
+
               </div>
     );
   }

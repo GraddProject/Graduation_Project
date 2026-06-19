@@ -68,7 +68,7 @@ export default function Login() {
           role: data.role[0], 
 
           profileImageUrl: profile?.profileImageUrl || null,
-          cebb674d96d2b31fc279e7b612da233e07e5c24
+        
         };
 
         setToken(data.token);

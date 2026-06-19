@@ -16,7 +16,9 @@ import PredictionResultCard from '../../Components/PredictionResultCard/Predicti
 import ClinicalDataPanel from '../../Components/ClinicalDataPanel/ClinicalDataPanel';
 import PredictionHistoryPanel from '../../Components/PredictionHistoryPanel/PredictionHistoryPanel'
 import { clinicalInputs, riskFields , preeclampsiaRiskFields , preeclampsiaInputs } from "../../helpers/clinicalConfig";
-import { normalizeMedicalData } from "../../helpers/dataMapper";
+
+import { normalizeMedicalData , toBinary , mapMedicalDataToPEModel ,  mapMedicalDataToGDMModel} from "../../helpers/dataMapper";
+
 
 import { formatDate } from 'date-fns';
 
@@ -358,7 +360,7 @@ const peSetters = {
         }
       );
 
-      console.log("Prediction Response", data);
+      
 
       setPredictionResult(data);
 setPredictionRecordId(data?.predictionRecordId ?? null);
@@ -374,15 +376,16 @@ setPredictionRecordId(data?.predictionRecordId ?? null);
   predicationResult: data.result,
   predicationConfidence: data.confidence,
 };
-console.log("Prediction Response", data);
+
 
 setPredictions(prev => {
   const updated = [newPrediction, ...prev];
-  console.log("UPDATED PREDICTIONS", updated);
+ 
   return updated;
 });
 
     } catch (error) {
+     
       console.log("Prediction Error:", error);
     } finally {
       setLoading(false);
@@ -438,7 +441,7 @@ setPredictions(prev => {
       }
     );
 
-    console.log("PE Prediction Response", data);
+   
 
     setPredictionResult(data);
     setPredictionRecordId(data?.predictionRecordId ?? null);
@@ -457,7 +460,6 @@ setPredictions(prev => {
 
     setPredictions(prev => {
       const updated = [newPrediction, ...prev];
-      console.log("UPDATED PE PREDICTIONS", updated);
       return updated;
     });
 
@@ -500,8 +502,6 @@ setPredictions(prev => {
       }));
 
       setPredictions(formattedPredictions);
-
-      console.log(data);
 
     } catch (error) {
       console.error("Failed to fetch predictions:", error);
@@ -628,18 +628,57 @@ const getMedicalData = async () => {
 }, [medicalData]);
 
 useEffect(() => {
+  if (!medicalData || predType !== "GDM") return;
+
+  const gdmData = mapMedicalDataToGDMModel(medicalData);
+
+  setAge(gdmData.Age);
+  setBmi(gdmData.BMI);
+  setNumPregnancies(gdmData.No_of_Pregnancy);
+
+  setRiskFactors({
+    Family_History: gdmData.Family_History ?? 0,
+    unexplained_prenetal_loss: gdmData.unexplained_prenetal_loss ?? 0,
+    Large_Child_or_Birth_Default: gdmData.Large_Child_or_Birth_Default ?? 0,
+    PCOS: gdmData.PCOS ?? 0,
+    Sedentary_Lifestyle: gdmData.Sedentary_Lifestyle ?? 0,
+    Prediabetes: gdmData.Prediabetes ?? 0,
+  });
+
+}, [medicalData, predType]);
+
+
+
+useEffect(() => {
   if (!medicalData) return;
 
-  setRiskFactors(prev => ({
-    ...prev,
+  const peData = mapMedicalDataToPEModel(medicalData);
 
-    Family_History: medicalData.hasFamilyHistoryOfDiabetes ? 1 : 0,
-    PCOS: medicalData.hasPCOS ? 1 : 0,
-    unexplained_prenetal_loss: medicalData.hadUnexplainedPrenatalLoss ? 1 : 0,
-    Large_Child_or_Birth_Default: medicalData.hadLargeChildOrBirthDefault ? 1 : 0,
-    Sedentary_Lifestyle: medicalData.hasSedentaryLifestyle ? 1 : 0,
-    Prediabetes: medicalData.hasPrediabetes ? 1 : 0,
-  }));
+  setAge(peData.age);
+  setBmi(peData.bmi);
+  setParity(peData.parity);
+  setGravida(peData.gravida);
+  setGestationalAgeWeeks(peData.gestational_age_weeks);
+
+  setPeRiskFactors({
+    chronic_hypertension: peData.chronic_hypertension,
+    pregestational_diabetes: peData.pregestational_diabetes,
+    chronic_kidney_disease: peData.chronic_kidney_disease,
+    multiple_pregnancy: peData.multiple_pregnancy,
+    previous_preeclampsia: peData.previous_preeclampsia,
+    family_history_preeclampsia: peData.family_history_preeclampsia,
+
+    headache: peData.headache,
+    visual_disturbances: peData.visual_disturbances,
+    epigastric_pain: peData.epigastric_pain,
+    edema: peData.edema,
+    nausea_vomiting: peData.nausea_vomiting,
+
+    fetal_growth_restriction: peData.fetal_growth_restriction,
+    acute_kidney_injury: peData.acute_kidney_injury,
+    pulmonary_edema: peData.pulmonary_edema,
+  });
+
 }, [medicalData]);
 
   const confidenceValue = Number(predictionResult?.confidence || 0);
@@ -649,7 +688,7 @@ useEffect(() => {
   const visiblePredictions = showAll
     ? predictions
     : predictions.slice(0, 6);
-  console.log("Current Predictions", predictions);
+
 
     const values = predType === "PE" ? peValues : gdmValues;
 const setters = predType === "PE" ? peSetters : gdmSetters;
