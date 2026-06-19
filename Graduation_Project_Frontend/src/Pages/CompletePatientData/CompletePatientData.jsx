@@ -99,7 +99,6 @@ export default function CompleteMedicalProfilePage() {
       formData,
       {
         headers: {
-          Authorization: `Bearer ${user?.token}`,
           "Content-Type": "multipart/form-data",
         },
       }
