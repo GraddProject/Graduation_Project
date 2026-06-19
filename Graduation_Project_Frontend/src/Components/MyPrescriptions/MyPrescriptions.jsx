@@ -16,6 +16,7 @@ export default function MyPrescriptions({ token }) {
         if (!res.ok) throw new Error();
         const data = await res.json();
         setPrescriptions(data);
+        console.log(data);
       } catch {
         // silently fail
       } finally {

@@ -61,7 +61,7 @@ export default function CreatPass() {
     try {
       await axios.request(options);
 
-      navigate("/complete-profile", {
+      navigate("patient/complete-profile", {
   state: {
     email,
   },
