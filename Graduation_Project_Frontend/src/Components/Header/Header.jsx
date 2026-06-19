@@ -15,6 +15,7 @@ export default function Header() {
 
   const [showNotifications, setShowNotifications] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  console.log("user" ,user)
 
   const pageTitles = {
     "/doctor/dashboard": "Dashboard",
@@ -40,7 +41,6 @@ export default function Header() {
     location.pathname === "/doctor/dashboard" ||
     location.pathname === "/patient/dashboard";
 
-  // Poll unread count every 30 seconds
   const fetchUnreadCount = useCallback(async () => {
     if (!token) return;
     try {
@@ -49,7 +49,6 @@ export default function Header() {
       });
       if (!res.ok) return;
       const data = await res.json();
-      // API returns a number directly or { count: number }
       setUnreadCount(typeof data === "number" ? data : data?.count ?? 0);
     } catch {}
   }, [token]);
@@ -106,7 +105,7 @@ export default function Header() {
           </button>
 
           {/* Avatar */}
-          <div className="cursor-pointer" onClick={() => navigate("/patient/profile")}>
+          <div className="cursor-pointer" onClick={handleProfileClick}>
             {user?.profileImageUrl ? (
               <img
                 src={user.profileImageUrl}

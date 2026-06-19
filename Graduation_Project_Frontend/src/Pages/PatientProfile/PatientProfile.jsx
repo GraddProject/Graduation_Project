@@ -332,8 +332,7 @@ export default function PatientProfile() {
         </div>
 
         <div className="flex bg-white rounded-xl shadow overflow-hidden w-4/12">
-          {/* <div className="w-[4px] bg-gradient-to-b from-[#4A5F4E] to-[#667E68]" /> */}
-
+      
           <div className="w-full px-5 py-5 space-y-4">
 
             <h3 className="font-semibold">My Doctor</h3>
