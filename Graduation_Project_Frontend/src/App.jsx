@@ -24,6 +24,7 @@ import DoctorProfile from "./Pages/DoctorProfile/DoctorProfile";
 import MedicalRecords from "./Pages/MedicalRecords/MedicalRecords";
 import UploadTests from "./Pages/UploadTests/UploadTests";
 import PatientProfile from "./Pages/PatientProfile/PatientProfile";
+import CompletePatientData from "./Pages/CompletePatientData/CompletePatientData"
 
 
 
@@ -34,6 +35,7 @@ function App() {
         { path: "/", element: <Login /> },
         { path: "/login", element: <Login /> },
         { path: "/createpass", element: <CreatPass /> },
+         { path: "/patient/complete-profile", element: <CompletePatientData/>},
       ],
     },
 
@@ -63,8 +65,7 @@ function App() {
               { path: "/patient/dashboard", element: <PatientDashboard /> },
               { path: "/patient/medical-records", element: <MedicalRecords /> },
               { path: "/patient/upload-tests", element: <UploadTests /> },
-              { path: "/patient/profile", element: <PatientProfile/>}
-
+              { path: "/patient/profile", element: <PatientProfile/>},
             ],
           },
 

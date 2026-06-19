@@ -17,6 +17,7 @@ export default function CreatPass() {
   const [userId, setUserId] = useState("");
   const [token, setToken] = useState("");
   const [apiError, setApiError] = useState("");
+  const [showForm, setShowForm] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -59,7 +60,12 @@ export default function CreatPass() {
     };
     try {
       await axios.request(options);
-      navigate("/login");
+
+      navigate("/complete-profile", {
+  state: {
+    email,
+  },
+});
     } catch (error) {
       setApiError(error.response?.data?.[0]?.description || "Something went wrong, please try again.");
     }

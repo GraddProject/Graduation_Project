@@ -5,7 +5,7 @@ export default function PredictionTypeCard({ title, desc, icon: Icon, iconBg, ic
   return (
     <button
       onClick={onClick}
-      className={`relative  border p-4 w-2/4 flex gap-4 items-center rounded-xl transition
+      className={`relative  border p-4 w-full md:w-2/4 lg:w-2/4 flex gap-4 items-center rounded-xl transition
       ${selected ? "bg-[#F4FBF4FF] border-[#4A6B4EFF] border-2" : "border-[#E8EBE8FF]"}`}
     >
       {selected && (
@@ -20,9 +20,9 @@ export default function PredictionTypeCard({ title, desc, icon: Icon, iconBg, ic
         <Icon size={28} className={iconColor} />
       </div>
 
-      <div className="flex flex-col">
+      <div className="flex flex-col ">
         <h2 className="text-[#1A2E1CFF] text-start">{title}</h2>
-        <p className="text-[#6B7E6DFF] text-sm">{desc}</p>
+        <p className="text-[#6B7E6DFF] text-sm hidden lg:flex">{desc}</p>
       </div>
     </button>
   );

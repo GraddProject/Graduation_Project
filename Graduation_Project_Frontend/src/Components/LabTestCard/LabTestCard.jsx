@@ -8,7 +8,7 @@ export default function LabTestCard({mode, name, date , download , onClick , onD
   return <>
    <div className={`bg-white flex flex-row items-center justify-between cursor-pointer ${ mode === "patientProfile" ? "border border-[#E8EBE8FF] rounded-lg px-3 py-3" : mode === "prediction" ? "min-w-fit  gap-10 py-2"
     : "w-full gap-2 border-b pb-3"
-}`}   onClick={onClick}>
+    }`}  >
     <div className='flex flex-row items-center gap-3'>
         <div className="w-10 h-10 rounded-full bg-[#F5F0FAFF] flex items-center justify-center">
            <FlaskConical size={19} className="text-[#9B7CB6FF]" />
@@ -24,7 +24,7 @@ export default function LabTestCard({mode, name, date , download , onClick , onD
             <Eye size={16} className="text-[#6B8CAFFF]" />
         </div>
         
-        <div className='w-8 h-8 rounded-full bg-white border border-[#E8EBE8FF] flex items-center justify-center' onClick={(e) => {e.stopPropagation(); onClick(); }}>
+        <div className='w-8 h-8 rounded-full bg-white border border-[#E8EBE8FF] flex items-center justify-center' onClick={(e) => {e.stopPropagation(); download(); }}>
             <Download size={16} className="text-[#5A8A5DFF]" />
         </div>
 

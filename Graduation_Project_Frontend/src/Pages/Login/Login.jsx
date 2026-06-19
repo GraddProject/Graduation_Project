@@ -66,7 +66,7 @@ export default function Login() {
           email: data.email,
           displayName: data.displayName,
           role: data.role[0], 
-          profileImageUrl: profile.profileImageUrl,
+          profileImageUrl: profile?.profileImageUrl,
         };
 
         setToken(data.token);
@@ -80,6 +80,7 @@ export default function Login() {
           navigate("/admindashboard", { replace: true });
         }
       }
+      console.log("successssssssssss")
     } catch (error) {
       setIncorrectError(
         error.response?.data?.message || "Invalid email or password",
