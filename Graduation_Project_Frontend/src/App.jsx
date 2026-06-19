@@ -54,7 +54,7 @@ function App() {
               { path: "/doctor/prediction-history", element: <PredictionHistory /> },
               { path: "/doctor/profile", element: <DoctorProfile /> },
               { path: "/doctor/appointments", element: <DoctorViewAppointments /> },
-              {path: "/doctor/patient-profile/:id", element: <DoctorPatientProfile /> }
+              {path: "/doctor/patient-profile/:id", element: <DoctorPatientProfile /> },
             ],
           },
 

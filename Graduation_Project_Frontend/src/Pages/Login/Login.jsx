@@ -32,7 +32,7 @@ export default function Login() {
 
   async function getCurrentUser(token) {
     const options = {
-      url: "https://her-journey-669913381811.us-central1.run.app/api/Account/currentUser",
+      url: "https://her-journey-1044023551709.us-central1.run.app/api/Account/currentUser",
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
     };
@@ -43,7 +43,7 @@ export default function Login() {
   async function sendDataTologin(values) {
     try {
       const options = {
-        url: "https://her-journey-669913381811.us-central1.run.app/api/Account/Login",
+        url: "https://her-journey-1044023551709.us-central1.run.app/api/Account/Login",
         method: "POST",
         data: values,
       };
@@ -66,11 +66,14 @@ export default function Login() {
           email: data.email,
           displayName: data.displayName,
           role: data.role[0], 
-          profileImageUrl: profile?.profileImageUrl,
+
+          profileImageUrl: profile?.profileImageUrl || null,
+          cebb674d96d2b31fc279e7b612da233e07e5c24
         };
 
         setToken(data.token);
         setUser(userData);
+        console.log("Logged in user data:", userData);
 
         if (userData.role === "Doctor") {
           navigate("/doctor/dashboard", { replace: true });
@@ -84,6 +87,7 @@ export default function Login() {
     } catch (error) {
       setIncorrectError(
         error.response?.data?.message || "Invalid email or password",
+        console.error("Login error:", error)
       );
     }
   }

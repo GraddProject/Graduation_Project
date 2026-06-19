@@ -1,10 +1,6 @@
-export default function StatisticsCard({
-  icon: Icon,
-  title,
-  value,
-  iconColor,
-  circleColor,
-}) {
+
+export default function StatisticsCard({ icon: Icon, title, value, iconColor, circleColor }) {
+
   return (
     <div
       className="
