@@ -26,7 +26,7 @@ const Toggle = ({ value, onChange }) => (
 );
 
 export default function CompleteMedicalProfilePage() {
-  const { user } = useContext(UserContext);
+  const { token } = useContext(UserContext);
   const navigate = useNavigate();
   const location = useLocation();
   const email = location.state?.email || "";
@@ -99,11 +99,13 @@ export default function CompleteMedicalProfilePage() {
       formData,
       {
         headers: {
+          Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data",
         },
       }
     );
-
+    
+console.log(token);
     navigate("/login");
   };
 
