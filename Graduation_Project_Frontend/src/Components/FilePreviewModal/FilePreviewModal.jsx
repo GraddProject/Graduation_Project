@@ -5,7 +5,7 @@ export default function FilePreviewModal({ previewFile, setPreviewFile }) {
   if (!previewFile) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+    <div className="fixed top-0 right-0 bottom-0 bg-black/60 w-4/12 flex items-center justify-center z-50">
 
       <button
         className="absolute top-3 right-3 bg-[#2d2d2d] text-white px-3 py-1 rounded"

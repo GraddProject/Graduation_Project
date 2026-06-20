@@ -137,6 +137,7 @@ const gdmSetters = {
   ogtt: setOgtt,
   systolicBp: setSystolicBp,
   diastolicBp: setDiastolicBp,
+   hemoglobin: setHemoglobin,
 };
 const peSetters = {
   age: setAge,

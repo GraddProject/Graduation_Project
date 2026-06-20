@@ -64,7 +64,7 @@ export default function Dashboard() {
     );
 
 
-    console.log(data);
+    console.log("dashborad", data);
 
     const list = Array.isArray(data)
       ? data
